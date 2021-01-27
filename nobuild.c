@@ -5,7 +5,7 @@ void check_example(const char *example)
     const char *example_path = PATH("examples", remove_ext(example));
 
 #ifdef _WIN32
-    CMD("cl.exe", PATH("examples", example));
+    CMD("cl.exe", "/Fe.\\examples\\", PATH("examples", example));
     CMD(CONCAT(example_path, ".exe"));
 #else
     CMD("cc", "-o", example_path, PATH("examples", example));
