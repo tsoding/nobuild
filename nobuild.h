@@ -220,7 +220,7 @@ void mkdirs_impl(int ignore, ...)
 
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
 
-// TODO: there is no way to remove a folder
+// TODO(#3): there is no way to remove a folder
 // TODO: there is no way to remove a file
 
 const char *concat_impl(int ignore, ...)
