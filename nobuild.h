@@ -322,7 +322,7 @@ void cmd_impl(int ignore, ...)
     nobuild_exec(argv);
 }
 
-// TODO: there is no way to redirect the output of CMD to a file
+// TODO(#5): there is no way to redirect the output of CMD to a file
 #define CMD(...)                                                \
     do {                                                        \
         printf("[INFO] %s\n", CONCAT_SEP(" ", __VA_ARGS__));    \
