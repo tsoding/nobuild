@@ -17,7 +17,7 @@
 #endif // _WIN32
 
 // TODO(#1): no way to disable echo in nobuild scripts
-// TODO: no way to ignore fails
+// TODO(#2): no way to ignore fails
 
 #ifdef _WIN32
 struct dirent
