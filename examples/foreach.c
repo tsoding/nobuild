@@ -1,3 +1,4 @@
+#define NOBUILD_IMPLEMENTATION
 #include "../nobuild.h"
 
 void foreach_vargs(int ignore, ...)

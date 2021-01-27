@@ -1,3 +1,4 @@
+#define NOBUILD_IMPLEMENTATION
 #include "./nobuild.h"
 
 void check_example(const char *example)
