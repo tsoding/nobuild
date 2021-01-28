@@ -2,11 +2,10 @@
 #include "../nobuild.h"
 
 #define DEMO(expr)                              \
-    printf(#expr " == \"%s\"\n", expr)
+    INFO(#expr " == \"%s\"", expr)
 
 int main(int argc, char *argv[])
 {
-    printf("=== String Manipulation Example ===\n");
     DEMO(CONCAT("foo", "bar", "baz"));
     DEMO(PATH("foo", "bar", "baz"));
     DEMO(CONCAT_SEP("++", "foo", "bar", "baz"));

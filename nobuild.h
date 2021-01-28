@@ -21,15 +21,11 @@
 //
 // ============================================================
 //
-// nobuild — 0.0.1 — Header only library for writing build recipes in C.
+// nobuild — 0.0.1-dev — Header only library for writing build recipes in C.
 //
 // https://github.com/tsoding/nobuild
 //
 // ============================================================
-//
-// ChangeLog (https://semver.org/ is implied)
-//
-//    0.0.1 First Official Release
 
 #ifndef NOBUILD_H_
 #define NOBUILD_H_
@@ -154,7 +150,7 @@
 // TODO(#5): there is no way to redirect the output of CMD to a file
 #define CMD(...)                                                \
     do {                                                        \
-        printf("[INFO] %s\n", CONCAT_SEP(" ", __VA_ARGS__));    \
+        INFO(CONCAT_SEP(" ", __VA_ARGS__));                 \
         cmd_impl(69, __VA_ARGS__, NULL);                        \
     } while(0)
 
@@ -171,6 +167,12 @@ char *shift(int *argc, char ***argv);
 #define PATH(...) CONCAT_SEP(PATH_SEP, __VA_ARGS__)
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
 
+void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
+void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
+
+void INFO(const char *fmt, ...);
+void WARN(const char *fmt, ...);
+void ERRO(const char *fmt, ...);
 #endif  // NOBUILD_H_
 
 #ifdef NOBUILD_IMPLEMENTATION
@@ -321,14 +323,12 @@ void mkdirs_impl(int ignore, ...)
 
         result[length] = '\0';
 
-        printf("[INFO] mkdir %s\n", result);
+        INFO("mkdir %s", result);
         if (mkdir(result, 0755) < 0) {
             if (errno == EEXIST) {
-                fprintf(stderr, "[WARN] directory %s already exists\n",
-                        result);
+                WARN("directory %s already exists", result);
             } else {
-                fprintf(stderr, "[ERROR] could not create directory %s: %s\n",
-                        result, strerror(errno));
+                ERRO("could not create directory %s: %s", result, strerror(errno));
                 exit(1);
             }
         }
@@ -359,36 +359,29 @@ const char *concat_impl(int ignore, ...)
     return result;
 }
 
-
-
-
 void nobuild_exec(const char **argv)
 {
 #ifdef _WIN32
     intptr_t status = _spawnvp(_P_WAIT, argv[0], (char * const*) argv);
     if (status < 0) {
-        fprintf(stderr, "[ERROR] could not start child process: %s\n",
-                strerror(errno));
+        ERRO("could not start child process: %s", strerror(errno));
         exit(1);
     }
 
     if (status > 0) {
-        fprintf(stderr, "[ERROR] command exited with exit code %d\n",
-                status);
+        ERRO("command exited with exit code %d", status);
         exit(1);
     }
 #else
     pid_t cpid = fork();
     if (cpid == -1) {
-        fprintf(stderr, "[ERROR] could not fork a child process: %s\n",
-                strerror(errno));
+        ERRO("could not fork a child process: %s", strerror(errno));
         exit(1);
     }
 
     if (cpid == 0) {
         if (execvp(argv[0], (char * const*) argv) < 0) {
-            fprintf(stderr, "[ERROR] could not execute child process: %s\n",
-                    strerror(errno));
+            ERRO("could not execute child process: %s", strerror(errno));
             exit(1);
         }
     } else {
@@ -399,17 +392,16 @@ void nobuild_exec(const char **argv)
             if (WIFEXITED(wstatus)) {
                 int exit_status = WEXITSTATUS(wstatus);
                 if (exit_status != 0) {
-                    fprintf(stderr, "[ERROR] command exited with exit code %d\n", exit_status);
-                    exit(-1);
+                    ERRO("command exited with exit code %d", exit_status);
+                    exit(1);
                 }
 
                 break;
             }
 
             if (WIFSIGNALED(wstatus)) {
-                fprintf(stderr, "[ERROR] command process was terminated by signal %d\n",
-                        WTERMSIG(wstatus));
-                exit(-1);
+                ERRO("command process was terminated by signal %d", WTERMSIG(wstatus));
+                exit(1);
             }
         }
     }
@@ -463,6 +455,45 @@ char *shift(int *argc, char ***argv)
     *argv += 1;
     *argc -= 1;
     return result;
+}
+
+void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stream, tag, fmt, args);
+    va_end(args);
+}
+
+void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args)
+{
+    fprintf(stream, "[%s] ", tag);
+    vfprintf(stream, fmt, args);
+    fprintf(stream, "\n");
+}
+
+void INFO(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stdout, "INFO", fmt, args);
+    va_end(args);
+}
+
+void WARN(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stderr, "WARN", fmt, args);
+    va_end(args);
+}
+
+void ERRO(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stderr, "ERRO", fmt, args);
+    va_end(args);
 }
 
 #endif // NOBUILD_IMPLEMENTATION
