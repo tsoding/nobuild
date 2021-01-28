@@ -21,7 +21,7 @@
 //
 // ============================================================
 //
-// nobuild — 0.1.0 — Header only library for writing build recipes in C.
+// nobuild — 0.2.0-dev — Header only library for writing build recipes in C.
 //
 // https://github.com/tsoding/nobuild
 //
@@ -157,6 +157,7 @@
 const char *concat_impl(int ignore, ...);
 const char *concat_sep_impl(const char *sep, ...);
 const char *build__join(const char *sep, ...);
+int nobuild__ends_with(const char *str, const char *postfix);
 void mkdirs_impl(int ignore, ...);
 void cmd_impl(int ignore, ...);
 void nobuild_exec(const char **argv);
@@ -169,6 +170,7 @@ char *shift(int *argc, char ***argv);
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
 #define NOEXT(path) nobuild__remove_ext(path)
+#define ENDS_WITH(str, postfix) nobuild__ends_with(str, postfix)
 
 void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
 void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
@@ -579,6 +581,13 @@ void ERRO(const char *fmt, ...)
     va_start(args, fmt);
     nobuild_vlog(stderr, "ERRO", fmt, args);
     va_end(args);
+}
+
+int nobuild__ends_with(const char *str, const char *postfix)
+{
+    const size_t str_n = strlen(str);
+    const size_t postfix_n = strlen(postfix);
+    return postfix_n <= str_n && strcmp(str + str_n - postfix_n, postfix) == 0;
 }
 
 #endif // NOBUILD_IMPLEMENTATION
