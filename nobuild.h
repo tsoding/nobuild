@@ -21,7 +21,7 @@
 //
 // ============================================================
 //
-// nobuild — 0.0.1-dev — Header only library for writing build recipes in C.
+// nobuild — 0.1.0 — Header only library for writing build recipes in C.
 //
 // https://github.com/tsoding/nobuild
 //
