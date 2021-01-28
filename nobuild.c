@@ -3,7 +3,9 @@
 
 void check_example(const char *example)
 {
-    const char *example_path = PATH("examples", remove_ext(example));
+    const char *example_path = PATH("examples", NOEXT(example));
+
+    INFO("===== %s =====", NOEXT(example));
 
 #ifdef _WIN32
     CMD("cl.exe", "/Fe.\\examples\\", PATH("examples", example));

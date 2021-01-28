@@ -21,15 +21,11 @@
 //
 // ============================================================
 //
-// nobuild — 0.0.1 — Header only library for writing build recipes in C.
+// nobuild — 0.0.1-dev — Header only library for writing build recipes in C.
 //
 // https://github.com/tsoding/nobuild
 //
 // ============================================================
-//
-// ChangeLog (https://semver.org/ is implied)
-//
-//    0.0.1 First Official Release
 
 #ifndef NOBUILD_H_
 #define NOBUILD_H_
@@ -154,12 +150,13 @@
 // TODO(#5): there is no way to redirect the output of CMD to a file
 #define CMD(...)                                                \
     do {                                                        \
-        printf("[INFO] %s\n", CONCAT_SEP(" ", __VA_ARGS__));    \
+        INFO(JOIN(" ", __VA_ARGS__));                           \
         cmd_impl(69, __VA_ARGS__, NULL);                        \
     } while(0)
 
 const char *concat_impl(int ignore, ...);
 const char *concat_sep_impl(const char *sep, ...);
+const char *build__join(const char *sep, ...);
 void mkdirs_impl(int ignore, ...);
 void cmd_impl(int ignore, ...);
 void nobuild_exec(const char **argv);
@@ -167,10 +164,18 @@ const char *remove_ext(const char *path);
 char *shift(int *argc, char ***argv);
 
 #define CONCAT(...) concat_impl(69, __VA_ARGS__, NULL)
-#define CONCAT_SEP(sep, ...) concat_sep_impl(sep, __VA_ARGS__, NULL)
-#define PATH(...) CONCAT_SEP(PATH_SEP, __VA_ARGS__)
+#define CONCAT_SEP(sep, ...) build__deprecated_concat_sep(sep, __VA_ARGS__, NULL)
+#define JOIN(sep, ...) build__join(sep, __VA_ARGS__, NULL)
+#define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
+#define NOEXT(path) nobuild__remove_ext(path)
 
+void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
+void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
+
+void INFO(const char *fmt, ...);
+void WARN(const char *fmt, ...);
+void ERRO(const char *fmt, ...);
 #endif  // NOBUILD_H_
 
 #ifdef NOBUILD_IMPLEMENTATION
@@ -254,8 +259,84 @@ char *shift(int *argc, char ***argv);
 // minirent.h IMPLEMENTATION END ////////////////////////////////////////
 #endif // _WIN32
 
+const char *build__join(const char *sep, ...)
+{
+    const size_t sep_len = strlen(sep);
+    size_t length = 0;
+    size_t seps_count = 0;
+
+    va_list args;
+
+    FOREACH_VARGS(sep, arg, args, {
+        length += strlen(arg);
+        seps_count += 1;
+    });
+    assert(length > 0);
+
+    seps_count -= 1;
+
+    char *result = malloc(length + seps_count * sep_len + 1);
+
+    length = 0;
+    FOREACH_VARGS(sep, arg, args, {
+        size_t n = strlen(arg);
+        memcpy(result + length, arg, n);
+        length += n;
+
+        if (seps_count > 0) {
+            memcpy(result + length, sep, sep_len);
+            length += sep_len;
+            seps_count -= 1;
+        }
+    });
+
+    result[length] = '\0';
+
+    return result;
+}
+
+const char *build__deprecated_concat_sep(const char *sep, ...)
+{
+    WARN("DEPRECATED: Please don't use `CONCAT_SEP(sep, ...)`. Please use JOIN(sep, ...) instead. `CONCAT_SEP(sep, ...)` will be removed in the next major release.");
+
+    const size_t sep_len = strlen(sep);
+    size_t length = 0;
+    size_t seps_count = 0;
+
+    va_list args;
+
+    FOREACH_VARGS(sep, arg, args, {
+        length += strlen(arg);
+        seps_count += 1;
+    });
+    assert(length > 0);
+
+    seps_count -= 1;
+
+    char *result = malloc(length + seps_count * sep_len + 1);
+
+    length = 0;
+    FOREACH_VARGS(sep, arg, args, {
+        size_t n = strlen(arg);
+        memcpy(result + length, arg, n);
+        length += n;
+
+        if (seps_count > 0) {
+            memcpy(result + length, sep, sep_len);
+            length += sep_len;
+            seps_count -= 1;
+        }
+    });
+
+    result[length] = '\0';
+
+    return result;
+}
+
 const char *concat_sep_impl(const char *sep, ...)
 {
+    WARN("DEPRECATED: Please don't use `concat_sep_impl(sep, ...)`. Please use JOIN(sep, ...) instead. `concat_sep_impl(sep, ...)` will be removed in the next major release.");
+
     const size_t sep_len = strlen(sep);
     size_t length = 0;
     size_t seps_count = 0;
@@ -321,14 +402,12 @@ void mkdirs_impl(int ignore, ...)
 
         result[length] = '\0';
 
-        printf("[INFO] mkdir %s\n", result);
+        INFO("mkdir %s", result);
         if (mkdir(result, 0755) < 0) {
             if (errno == EEXIST) {
-                fprintf(stderr, "[WARN] directory %s already exists\n",
-                        result);
+                WARN("directory %s already exists", result);
             } else {
-                fprintf(stderr, "[ERROR] could not create directory %s: %s\n",
-                        result, strerror(errno));
+                ERRO("could not create directory %s: %s", result, strerror(errno));
                 exit(1);
             }
         }
@@ -359,36 +438,29 @@ const char *concat_impl(int ignore, ...)
     return result;
 }
 
-
-
-
 void nobuild_exec(const char **argv)
 {
 #ifdef _WIN32
     intptr_t status = _spawnvp(_P_WAIT, argv[0], (char * const*) argv);
     if (status < 0) {
-        fprintf(stderr, "[ERROR] could not start child process: %s\n",
-                strerror(errno));
+        ERRO("could not start child process: %s", strerror(errno));
         exit(1);
     }
 
     if (status > 0) {
-        fprintf(stderr, "[ERROR] command exited with exit code %d\n",
-                status);
+        ERRO("command exited with exit code %d", status);
         exit(1);
     }
 #else
     pid_t cpid = fork();
     if (cpid == -1) {
-        fprintf(stderr, "[ERROR] could not fork a child process: %s\n",
-                strerror(errno));
+        ERRO("could not fork a child process: %s", strerror(errno));
         exit(1);
     }
 
     if (cpid == 0) {
         if (execvp(argv[0], (char * const*) argv) < 0) {
-            fprintf(stderr, "[ERROR] could not execute child process: %s\n",
-                    strerror(errno));
+            ERRO("could not execute child process: %s", strerror(errno));
             exit(1);
         }
     } else {
@@ -399,17 +471,16 @@ void nobuild_exec(const char **argv)
             if (WIFEXITED(wstatus)) {
                 int exit_status = WEXITSTATUS(wstatus);
                 if (exit_status != 0) {
-                    fprintf(stderr, "[ERROR] command exited with exit code %d\n", exit_status);
-                    exit(-1);
+                    ERRO("command exited with exit code %d", exit_status);
+                    exit(1);
                 }
 
                 break;
             }
 
             if (WIFSIGNALED(wstatus)) {
-                fprintf(stderr, "[ERROR] command process was terminated by signal %d\n",
-                        WTERMSIG(wstatus));
-                exit(-1);
+                ERRO("command process was terminated by signal %d", WTERMSIG(wstatus));
+                exit(1);
             }
         }
     }
@@ -438,7 +509,7 @@ void cmd_impl(int ignore, ...)
     nobuild_exec(argv);
 }
 
-const char *remove_ext(const char *path)
+const char *nobuild__remove_ext(const char *path)
 {
     size_t n = strlen(path);
     while (n > 0 && path[n - 1] != '.') {
@@ -456,6 +527,12 @@ const char *remove_ext(const char *path)
     }
 }
 
+const char *remove_ext(const char *path)
+{
+    WARN("DEPRECATED: Please use `NOEXT(path)` instead of `remove_ext(path)`. `remove_ext(path)` will be removed in the next major release.");
+    nobuild__remove_ext(path);
+}
+
 char *shift(int *argc, char ***argv)
 {
     assert(*argc > 0);
@@ -463,6 +540,45 @@ char *shift(int *argc, char ***argv)
     *argv += 1;
     *argc -= 1;
     return result;
+}
+
+void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stream, tag, fmt, args);
+    va_end(args);
+}
+
+void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args)
+{
+    fprintf(stream, "[%s] ", tag);
+    vfprintf(stream, fmt, args);
+    fprintf(stream, "\n");
+}
+
+void INFO(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stdout, "INFO", fmt, args);
+    va_end(args);
+}
+
+void WARN(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stderr, "WARN", fmt, args);
+    va_end(args);
+}
+
+void ERRO(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stderr, "ERRO", fmt, args);
+    va_end(args);
 }
 
 #endif // NOBUILD_IMPLEMENTATION
