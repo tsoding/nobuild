@@ -9,7 +9,7 @@
 
 ## Deprecations
 
-All the deprecated functions and macros will be removed in the next majori release.a
+All the deprecated functions and macros will be removed in the next major release.
 
 - `remove_ext(path)` is deprecated. Use `NOEXT(path)` instead.
 - `CONCAT_SEP(sep, ...)` is deprecated. Use `JOIN(sep, ...)` instead.
