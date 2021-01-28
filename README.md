@@ -25,3 +25,7 @@ Keep in mind that [nobuild.h](./nobuild.h) is an [stb-style](https://github.com/
    - `$ cc nobuild.c -o nobuild` on POSIX systems
    - `$ cl.exe nobuild.c` on Windows with MSVC
 4. Run the build: `$ ./nobuild`
+
+## API Conventions
+
+- Functions from [nobuild.h](./nobuild.h) that start with `nobuild__` (double underscore) are private to the library and should not be relied upon. They can be changed in any release without a warning.

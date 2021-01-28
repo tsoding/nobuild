@@ -166,6 +166,7 @@ char *shift(int *argc, char ***argv);
 #define CONCAT_SEP(sep, ...) concat_sep_impl(sep, __VA_ARGS__, NULL)
 #define PATH(...) CONCAT_SEP(PATH_SEP, __VA_ARGS__)
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
+#define NOEXT(path) nobuild__remove_ext(path)
 
 void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
 void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
@@ -430,7 +431,7 @@ void cmd_impl(int ignore, ...)
     nobuild_exec(argv);
 }
 
-const char *remove_ext(const char *path)
+const char *nobuild__remove_ext(const char *path)
 {
     size_t n = strlen(path);
     while (n > 0 && path[n - 1] != '.') {
@@ -446,6 +447,12 @@ const char *remove_ext(const char *path)
     } else {
         return path;
     }
+}
+
+const char *remove_ext(const char *path)
+{
+    WARN("DEPRECATED: please use `NOEXT` instead of `remove_ext`. `remove_ext` will be removed in the next major release");
+    nobuild__remove_ext(path);
 }
 
 char *shift(int *argc, char ***argv)

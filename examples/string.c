@@ -9,6 +9,6 @@ int main(int argc, char *argv[])
     DEMO(CONCAT("foo", "bar", "baz"));
     DEMO(PATH("foo", "bar", "baz"));
     DEMO(CONCAT_SEP("++", "foo", "bar", "baz"));
-    DEMO(remove_ext("main.c"));
+    DEMO(NOEXT("main.c"));
     return 0;
 }
