@@ -19,11 +19,8 @@ void check_example(const char *example)
 int main(int argc, char *argv[])
 {
     FOREACH_FILE_IN_DIR(example, "examples", {
-        if(*example != '.') {
-            size_t n = strlen(example);
-            if (n >= 2 && strcmp(example + n - 2, ".c") == 0) {
-                check_example(example);
-            }
+        if (ENDS_WITH(example, ".c")) {
+            check_example(example);
         }
     });
     return 0;

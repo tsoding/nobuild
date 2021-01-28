@@ -1,5 +1,11 @@
 [semver](https://semver.org/) is implied.
 
+# 0.2.0-dev
+
+*Not Released Yet*
+
+- Introduced `ENDS_WITH(str, postfix)` function that checks if `str` ends with `postfix`.
+
 # 0.1.0 — Cleaning Things Up. Figuring Out Conventions.
 
 *2021-01-27*

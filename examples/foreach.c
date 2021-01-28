@@ -24,7 +24,7 @@ void foreach_array(void)
 void foreach_file_in_dir(const char *dir_path)
 {
     FOREACH_FILE_IN_DIR(file, dir_path, {
-            INFO("    %s", file);
+        INFO("    %s", file);
     });
 }
 
