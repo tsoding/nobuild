@@ -150,12 +150,13 @@
 // TODO(#5): there is no way to redirect the output of CMD to a file
 #define CMD(...)                                                \
     do {                                                        \
-        INFO(CONCAT_SEP(" ", __VA_ARGS__));                 \
+        INFO(JOIN(" ", __VA_ARGS__));                           \
         cmd_impl(69, __VA_ARGS__, NULL);                        \
     } while(0)
 
 const char *concat_impl(int ignore, ...);
 const char *concat_sep_impl(const char *sep, ...);
+const char *build__join(const char *sep, ...);
 void mkdirs_impl(int ignore, ...);
 void cmd_impl(int ignore, ...);
 void nobuild_exec(const char **argv);
@@ -163,8 +164,9 @@ const char *remove_ext(const char *path);
 char *shift(int *argc, char ***argv);
 
 #define CONCAT(...) concat_impl(69, __VA_ARGS__, NULL)
-#define CONCAT_SEP(sep, ...) concat_sep_impl(sep, __VA_ARGS__, NULL)
-#define PATH(...) CONCAT_SEP(PATH_SEP, __VA_ARGS__)
+#define CONCAT_SEP(sep, ...) build__deprecated_concat_sep(sep, __VA_ARGS__, NULL)
+#define JOIN(sep, ...) build__join(sep, __VA_ARGS__, NULL)
+#define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
 #define NOEXT(path) nobuild__remove_ext(path)
 
@@ -257,8 +259,84 @@ void ERRO(const char *fmt, ...);
 // minirent.h IMPLEMENTATION END ////////////////////////////////////////
 #endif // _WIN32
 
+const char *build__join(const char *sep, ...)
+{
+    const size_t sep_len = strlen(sep);
+    size_t length = 0;
+    size_t seps_count = 0;
+
+    va_list args;
+
+    FOREACH_VARGS(sep, arg, args, {
+        length += strlen(arg);
+        seps_count += 1;
+    });
+    assert(length > 0);
+
+    seps_count -= 1;
+
+    char *result = malloc(length + seps_count * sep_len + 1);
+
+    length = 0;
+    FOREACH_VARGS(sep, arg, args, {
+        size_t n = strlen(arg);
+        memcpy(result + length, arg, n);
+        length += n;
+
+        if (seps_count > 0) {
+            memcpy(result + length, sep, sep_len);
+            length += sep_len;
+            seps_count -= 1;
+        }
+    });
+
+    result[length] = '\0';
+
+    return result;
+}
+
+const char *build__deprecated_concat_sep(const char *sep, ...)
+{
+    WARN("DEPRECATED: Please don't use `CONCAT_SEP(sep, ...)`. Please use JOIN(sep, ...) instead. `CONCAT_SEP(sep, ...)` will be removed in the next major release.");
+
+    const size_t sep_len = strlen(sep);
+    size_t length = 0;
+    size_t seps_count = 0;
+
+    va_list args;
+
+    FOREACH_VARGS(sep, arg, args, {
+        length += strlen(arg);
+        seps_count += 1;
+    });
+    assert(length > 0);
+
+    seps_count -= 1;
+
+    char *result = malloc(length + seps_count * sep_len + 1);
+
+    length = 0;
+    FOREACH_VARGS(sep, arg, args, {
+        size_t n = strlen(arg);
+        memcpy(result + length, arg, n);
+        length += n;
+
+        if (seps_count > 0) {
+            memcpy(result + length, sep, sep_len);
+            length += sep_len;
+            seps_count -= 1;
+        }
+    });
+
+    result[length] = '\0';
+
+    return result;
+}
+
 const char *concat_sep_impl(const char *sep, ...)
 {
+    WARN("DEPRECATED: Please don't use `concat_sep_impl(sep, ...)`. Please use JOIN(sep, ...) instead. `concat_sep_impl(sep, ...)` will be removed in the next major release.");
+
     const size_t sep_len = strlen(sep);
     size_t length = 0;
     size_t seps_count = 0;
@@ -451,7 +529,7 @@ const char *nobuild__remove_ext(const char *path)
 
 const char *remove_ext(const char *path)
 {
-    WARN("DEPRECATED: please use `NOEXT` instead of `remove_ext`. `remove_ext` will be removed in the next major release");
+    WARN("DEPRECATED: Please use `NOEXT(path)` instead of `remove_ext(path)`. `remove_ext(path)` will be removed in the next major release.");
     nobuild__remove_ext(path);
 }
 
