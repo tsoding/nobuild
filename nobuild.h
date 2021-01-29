@@ -424,7 +424,6 @@ void mkdirs_impl(int ignore, ...)
     });
 }
 
-// TODO(#3): there is no way to remove a folder
 // TODO(#4): there is no way to remove a file
 
 const char *concat_impl(int ignore, ...)
