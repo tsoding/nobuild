@@ -2,7 +2,7 @@
 #include "../nobuild.h"
 
 #define DEMO(expr)                              \
-    INFO(#expr" == %d", expr)
+    INFO("    "#expr" == %d", expr)
 
 int main(int argc, char *argv[])
 {
