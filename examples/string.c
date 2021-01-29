@@ -2,10 +2,10 @@
 #include "../nobuild.h"
 
 #define DEMO_S(expr)                         \
-    INFO(#expr " == \"%s\"", expr)
+    INFO("    " #expr " == \"%s\"", expr)
 
 #define DEMO_D(expr)                         \
-    INFO(#expr " == %d", expr)
+    INFO("    " #expr " == %d", expr)
 
 int main(int argc, char *argv[])
 {
