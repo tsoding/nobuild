@@ -164,6 +164,7 @@ void cmd_impl(int ignore, ...);
 void nobuild_exec(const char **argv);
 const char *remove_ext(const char *path);
 char *shift(int *argc, char ***argv);
+void nobuild__rm(const char *path);
 
 #define CONCAT(...) concat_impl(69, __VA_ARGS__, NULL)
 #define CONCAT_SEP(sep, ...) build__deprecated_concat_sep(sep, __VA_ARGS__, NULL)
@@ -173,6 +174,11 @@ char *shift(int *argc, char ***argv);
 #define NOEXT(path) nobuild__remove_ext(path)
 #define ENDS_WITH(str, postfix) nobuild__ends_with(str, postfix)
 #define IS_DIR(path) nobuild__is_dir(path)
+#define RM(path)                                \
+    do {                                        \
+        INFO("rm %s", path);                    \
+        nobuild__rm(path);                      \
+    } while(0)
 
 void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
 void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
@@ -406,7 +412,7 @@ void mkdirs_impl(int ignore, ...)
 
         result[length] = '\0';
 
-        INFO("mkdir %s", result);
+        INFO("mkdirs %s", result);
         if (mkdir(result, 0755) < 0) {
             if (errno == EEXIST) {
                 WARN("directory %s already exists", result);
@@ -613,6 +619,35 @@ int nobuild__is_dir(const char *path)
 
     return (statbuf.st_mode & S_IFMT) == S_IFDIR;
 #endif // _WIN32
+}
+
+void nobuild__rm(const char *path)
+{
+    if (IS_DIR(path)) {
+        FOREACH_FILE_IN_DIR(file, path, {
+            if (strcmp(file, ".") != 0 && strcmp(file, "..") != 0) {
+                nobuild__rm(PATH(path, file));
+            }
+        });
+
+        if (rmdir(path) < 0) {
+            if (errno = ENOENT) {
+                WARN("directory %s does not exist");
+            } else {
+                ERRO("could not remove directory %s: %s", path, strerror(errno));
+                exit(1);
+            }
+        }
+    } else {
+        if (unlink(path) < 0) {
+            if (errno = ENOENT) {
+                WARN("file %s does not exist");
+            } else {
+                ERRO("could not remove file %s: %s", path, strerror(errno));
+                exit(1);
+            }
+        }
+    }
 }
 
 #endif // NOBUILD_IMPLEMENTATION
