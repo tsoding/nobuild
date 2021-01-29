@@ -5,6 +5,7 @@
 *Not Released Yet*
 
 - Introduced `ENDS_WITH(str, postfix)` function that checks if `str` ends with `postfix`.
+- Introduced `IS_DIR(path)` function that checks if `path`is a directory.
 
 # 0.1.0 — Cleaning Things Up. Figuring Out Conventions.
 
