@@ -595,7 +595,10 @@ int nobuild__ends_with(const char *str, const char *postfix)
 int nobuild__is_dir(const char *path)
 {
 #ifdef _WIN32
-#error "IS_DIR is not implemented for this platform"
+    DWORD dwAttrib = GetFileAttributes(path);
+
+    return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+            (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 #else
     struct stat statbuf = {0};
     if (stat(path, &statbuf) < 0) {
