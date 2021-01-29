@@ -6,13 +6,16 @@
 
 void print_file_recursively(const char *path)
 {
-    FOREACH_FILE_IN_DIR(file, path, {
-        const char *child = PATH(path, file);
-        INFO("    %s", child);
-        if (*file != '.' && IS_DIR(child)) {
-            print_file_recursively(child);
-        }
-    });
+    INFO("    %s", path);
+
+    if (IS_DIR(path)) {
+        FOREACH_FILE_IN_DIR(file, path, {
+            const char *child = PATH(path, file);
+            if (*file != '.') {
+                print_file_recursively(child);
+            }
+        });
+    }
 }
 
 int main(int argc, char *argv[])
@@ -27,6 +30,7 @@ int main(int argc, char *argv[])
     INFO("Directory removal");
     MKDIRS("foo", "bar", "baz");
     MKDIRS("foo", "bar", "hello", "world");
+    print_file_recursively("foo");
     RM("foo");
     DEMO(IS_DIR("foo"));
 
