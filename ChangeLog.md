@@ -1,8 +1,8 @@
 [semver](https://semver.org/) is implied.
 
-# 0.2.0-dev
+# 0.2.0 — Removing Everything
 
-*Not Released Yet*
+*2021-01-30*
 
 - Introduced `ENDS_WITH(str, postfix)` function that checks if `str` ends with `postfix`.
 - Introduced `IS_DIR(path)` function that checks if `path`is a directory.
