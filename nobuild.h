@@ -158,6 +158,7 @@ const char *concat_impl(int ignore, ...);
 const char *concat_sep_impl(const char *sep, ...);
 const char *build__join(const char *sep, ...);
 int nobuild__ends_with(const char *str, const char *postfix);
+int nobuild__is_dir(const char *path);
 void mkdirs_impl(int ignore, ...);
 void cmd_impl(int ignore, ...);
 void nobuild_exec(const char **argv);
@@ -171,6 +172,7 @@ char *shift(int *argc, char ***argv);
 #define MKDIRS(...) mkdirs_impl(69, __VA_ARGS__, NULL)
 #define NOEXT(path) nobuild__remove_ext(path)
 #define ENDS_WITH(str, postfix) nobuild__ends_with(str, postfix)
+#define IS_DIR(path) nobuild__is_dir(path)
 
 void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
 void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
@@ -588,6 +590,22 @@ int nobuild__ends_with(const char *str, const char *postfix)
     const size_t str_n = strlen(str);
     const size_t postfix_n = strlen(postfix);
     return postfix_n <= str_n && strcmp(str + str_n - postfix_n, postfix) == 0;
+}
+
+int nobuild__is_dir(const char *path)
+{
+#ifdef _WIN32
+#error "IS_DIR is not implemented for this platform"
+#else
+    struct stat statbuf = {0};
+    if (stat(path, &statbuf) < 0) {
+        ERRO("could not retrieve information about file %s: ",
+             path, strerror(errno));
+        exit(1);
+    }
+
+    return (statbuf.st_mode & S_IFMT) == S_IFDIR;
+#endif // _WIN32
 }
 
 #endif // NOBUILD_IMPLEMENTATION
