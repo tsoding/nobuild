@@ -599,7 +599,11 @@ int nobuild__is_dir(const char *path)
 #else
     struct stat statbuf = {0};
     if (stat(path, &statbuf) < 0) {
-        ERRO("could not retrieve information about file %s: ",
+        if (errno == ENOENT) {
+            return 0;
+        }
+
+        ERRO("could not retrieve information about file %s: %s",
              path, strerror(errno));
         exit(1);
     }

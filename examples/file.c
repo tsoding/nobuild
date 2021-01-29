@@ -8,5 +8,6 @@ int main(int argc, char *argv[])
 {
     DEMO(IS_DIR("./nobuild.c"));
     DEMO(IS_DIR("./examples"));
+    DEMO(IS_DIR("./file_that_does_not_exist"));
     return 0;
 }
