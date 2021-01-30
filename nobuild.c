@@ -1,6 +1,8 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nobuild.h"
 
+#define CFLAGS "-Wall", "-Wextra", "-std=c11"//, "-pedantic"
+
 void check_example(const char *example)
 {
     const char *example_path = PATH("examples", NOEXT(example));
@@ -11,7 +13,10 @@ void check_example(const char *example)
     CMD("cl.exe", "/Fe.\\examples\\", PATH("examples", example));
     CMD(CONCAT(example_path, ".exe"));
 #else
-    CMD("cc", "-o", example_path, PATH("examples", example));
+    const char *cc = getenv("CC");
+    if (cc == NULL) cc = "cc";
+
+    CMD(cc, CFLAGS, "-o", example_path, PATH("examples", example));
     CMD(example_path);
 #endif // _WIN32
 }

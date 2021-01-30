@@ -18,7 +18,7 @@ void print_file_recursively(const char *path)
     }
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
     DEMO(IS_DIR("./nobuild.c"));
     DEMO(IS_DIR("./examples"));

@@ -553,6 +553,8 @@ const char *remove_ext(const char *path)
 {
     WARN("DEPRECATED: Please use `NOEXT(path)` instead of `remove_ext(path)`. `remove_ext(path)` will be removed in the next major release.");
     nobuild__remove_ext(path);
+
+    return NULL;
 }
 
 char *shift(int *argc, char ***argv)
@@ -629,7 +631,7 @@ int nobuild__is_dir(const char *path)
         exit(1);
     }
 
-    return (statbuf.st_mode & S_IFMT) == S_IFDIR;
+    return S_ISDIR(statbuf.st_mode);
 #endif // _WIN32
 }
 
@@ -643,7 +645,7 @@ void nobuild__rm(const char *path)
         });
 
         if (rmdir(path) < 0) {
-            if (errno = ENOENT) {
+            if (errno == ENOENT) {
                 WARN("directory %s does not exist");
             } else {
                 ERRO("could not remove directory %s: %s", path, strerror(errno));
@@ -652,7 +654,7 @@ void nobuild__rm(const char *path)
         }
     } else {
         if (unlink(path) < 0) {
-            if (errno = ENOENT) {
+            if (errno == ENOENT) {
                 WARN("file %s does not exist");
             } else {
                 ERRO("could not remove file %s: %s", path, strerror(errno));
