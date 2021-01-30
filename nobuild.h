@@ -196,8 +196,6 @@ typedef enum {
     PIPE_ARG_CHAIN,
 } Pipe_Arg_Type;
 
-const char *nobuild__pipe_arg_as_cstr(Pipe_Arg_Type type);
-
 typedef struct {
     Pipe_Arg_Type type;
     const char** args;
@@ -853,19 +851,6 @@ Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
     result.args[count] = NULL;
 
     return result;
-}
-
-const char *nobuild__pipe_arg_as_cstr(Pipe_Arg_Type type)
-{
-    switch (type) {
-    case PIPE_ARG_IN: return "PIPE_ARG_IN";
-    case PIPE_ARG_OUT: return "PIPE_ARG_OUT";
-    case PIPE_ARG_CHAIN: return "PIPE_ARG_CHAIN";
-    default: {
-        assert(0 && "nobuild__pipe_arg_as_cstr: unreachable");
-        return NULL;
-    }
-    }
 }
 
 #endif // NOBUILD_IMPLEMENTATION
