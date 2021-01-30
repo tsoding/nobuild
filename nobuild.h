@@ -749,7 +749,7 @@ void nobuild__pipe(int ignore, ...)
     }
     va_end(args);
 
-    // TODO: input/output piping is not implemented for Linux
+    // TODO(#16): input/output piping is not implemented for Linux
     for (size_t i = 0; i < cmds_count; ++i) {
         cpids[i] = fork();
         if (cpids[i] < 0) {
