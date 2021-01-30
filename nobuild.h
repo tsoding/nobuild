@@ -678,7 +678,7 @@ void nobuild__rm(const char *path)
 #ifdef _WIN32
 void nobuild__pipe(int ignore, ...)
 {
-    ERRO("TODO: piping is not implemented on Windows at all");
+    ERRO("TODO(#14): piping is not implemented on Windows at all");
     exit(1);
 }
 #else
