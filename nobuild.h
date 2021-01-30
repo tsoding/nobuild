@@ -184,7 +184,10 @@ void nobuild_exec(const char **argv);
 const char *remove_ext(const char *path);
 char *shift(int *argc, char ***argv);
 void nobuild__rm(const char *path);
+
+#ifndef _WIN32
 void nobuild__posix_wait_for_pid(pid_t pid);
+#endif
 
 typedef enum {
     PIPE_ARG_END,
@@ -813,6 +816,7 @@ void nobuild__pipe(int ignore, ...)
 }
 #endif // _WIN32
 
+#ifndef _WIN32
 void nobuild__posix_wait_for_pid(pid_t pid)
 {
     for (;;) {
@@ -835,6 +839,7 @@ void nobuild__posix_wait_for_pid(pid_t pid)
         }
     }
 }
+#endif
 
 Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
 {
