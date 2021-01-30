@@ -30,6 +30,10 @@
 #ifndef NOBUILD_H_
 #define NOBUILD_H_
 
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif // _WIN32
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,7 +104,9 @@
 #   include <sys/wait.h>
 #   include <unistd.h>
 #   include <dirent.h>
+#   include <fcntl.h>
 #endif // _WIN32
+
 
 // TODO(#1): no way to disable echo in nobuild scripts
 // TODO(#2): no way to ignore fails
@@ -178,6 +184,29 @@ void nobuild_exec(const char **argv);
 const char *remove_ext(const char *path);
 char *shift(int *argc, char ***argv);
 void nobuild__rm(const char *path);
+void nobuild__posix_wait_for_pid(pid_t pid);
+
+typedef enum {
+    PIPE_ARG_END,
+    PIPE_ARG_IN,
+    PIPE_ARG_OUT,
+    PIPE_ARG_CHAIN,
+} Pipe_Arg_Type;
+
+const char *nobuild__pipe_arg_as_cstr(Pipe_Arg_Type type);
+
+typedef struct {
+    Pipe_Arg_Type type;
+    const char** args;
+} Pipe_Arg;
+
+void nobuild__pipe(int ignore, ...);
+Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...);
+
+#define PIPE(...) nobuild__pipe(69, __VA_ARGS__, nobuild__make_pipe_arg(PIPE_ARG_END, NULL))
+#define IN(path) nobuild__make_pipe_arg(PIPE_ARG_IN, path, NULL)
+#define OUT(path) nobuild__make_pipe_arg(PIPE_ARG_OUT, path, NULL)
+#define CHAIN(...) nobuild__make_pipe_arg(PIPE_ARG_CHAIN, __VA_ARGS__, NULL)
 
 #define CONCAT(...) concat_impl(69, __VA_ARGS__, NULL)
 #define CONCAT_SEP(sep, ...) build__deprecated_concat_sep(sep, __VA_ARGS__, NULL)
@@ -486,25 +515,7 @@ void nobuild_exec(const char **argv)
             exit(1);
         }
     } else {
-        for (;;) {
-            int wstatus = 0;
-            wait(&wstatus);
-
-            if (WIFEXITED(wstatus)) {
-                int exit_status = WEXITSTATUS(wstatus);
-                if (exit_status != 0) {
-                    ERRO("command exited with exit code %d", exit_status);
-                    exit(1);
-                }
-
-                break;
-            }
-
-            if (WIFSIGNALED(wstatus)) {
-                ERRO("command process was terminated by signal %d", WTERMSIG(wstatus));
-                exit(1);
-            }
-        }
+        nobuild__posix_wait_for_pid(cpid);
     }
 #endif // _WIN32
 }
@@ -661,6 +672,204 @@ void nobuild__rm(const char *path)
                 exit(1);
             }
         }
+    }
+}
+
+#ifdef _WIN32
+void nobuild__pipe(int ignore, ...)
+{
+    ERRO("TODO: piping is not implemented on Windows at all");
+    exit(1);
+}
+#else
+void nobuild__pipe(int ignore, ...)
+{
+    const char *input_filepath = NULL;
+    const char *output_filepath = NULL;
+    size_t cmds_count = 0;
+
+    va_list args;
+    va_start(args, ignore);
+    {
+        Pipe_Arg arg = va_arg(args, Pipe_Arg);
+        while (arg.type != PIPE_ARG_END) {
+            switch (arg.type) {
+            case PIPE_ARG_IN: {
+                if (input_filepath == NULL) {
+                    input_filepath = arg.args[0];
+                } else {
+                    // TODO: PIPE does not report where exactly a syntactic error has happened
+                    ERRO("input file was already set for the pipe");
+                    exit(1);
+                }
+            } break;
+
+            case PIPE_ARG_OUT: {
+                if (output_filepath == NULL) {
+                    output_filepath = arg.args[0];
+                } else {
+                    ERRO("output file was already set for the pipe");
+                    exit(1);
+                }
+            } break;
+
+            case PIPE_ARG_CHAIN: {
+                cmds_count += 1;
+            } break;
+
+            case PIPE_ARG_END:
+            default: {
+                assert(0 && "unreachable");
+            }
+            }
+
+            arg = va_arg(args, Pipe_Arg);
+        }
+    }
+    va_end(args);
+
+    if (cmds_count == 0) {
+        ERRO("no chains provided for the pipe");
+        exit(1);
+    }
+
+    Pipe_Arg *cmds = malloc(sizeof(Pipe_Arg) * cmds_count);
+    pid_t *cpids = malloc(sizeof(pid_t) * cmds_count);
+
+    cmds_count = 0;
+    va_start(args, ignore);
+    {
+        Pipe_Arg arg = va_arg(args, Pipe_Arg);
+        while (arg.type != PIPE_ARG_END) {
+            if (arg.type == PIPE_ARG_CHAIN) {
+                cmds[cmds_count++] = arg;
+            }
+            arg = va_arg(args, Pipe_Arg);
+        }
+    }
+    va_end(args);
+
+    // TODO: input/output piping is not implemented for Linux
+    for (size_t i = 0; i < cmds_count; ++i) {
+        cpids[i] = fork();
+        if (cpids[i] < 0) {
+            ERRO("could not fork a child: %s", strerror(errno));
+            exit(1);
+        }
+
+        if (cpids[i] == 0) {
+            // Chain is first and there is input file
+            if (i == 0) {
+                if (input_filepath != NULL) {
+                    int fdin = open(input_filepath, O_RDONLY);
+                    if (fdin < 0) {
+                        ERRO("could not open file %s: %s",
+                             input_filepath, strerror(errno));
+                        exit(1);
+                    }
+
+                    if (dup2(fdin, STDIN_FILENO) < 0) {
+                        ERRO("could not duplication file descriptor for %s: %s",
+                             input_filepath, strerror(errno));
+                        exit(1);
+                    }
+                }
+            } else {
+                assert(0 && "input piping is not implemented");
+            }
+
+            // Chain is last and there is output file
+            if (i == cmds_count - 1) {
+                if (output_filepath != NULL) {
+                    int fdout = open(output_filepath,
+                                     O_WRONLY | O_CREAT | O_TRUNC,
+                                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+                    if (fdout < 0) {
+                        ERRO("could not open file %s: %s",
+                             output_filepath, strerror(errno));
+                        exit(1);
+                    }
+
+                    if (dup2(fdout, STDOUT_FILENO) < 0) {
+                        ERRO("could not duplication file descriptor for %s: %s",
+                             output_filepath, strerror(errno));
+                        exit(1);
+                    }
+                }
+            } else {
+                assert(0 && "output piping is not implemented");
+            }
+
+            if (execvp(cmds[i].args[0], (char * const*) cmds[i].args) < 0) {
+                ERRO("could not execute command: %s", strerror(errno));
+                exit(1);
+            }
+        }
+    }
+
+    for (size_t i = 0; i < cmds_count; ++i) {
+        nobuild__posix_wait_for_pid(cpids[i]);
+    }
+}
+#endif // _WIN32
+
+void nobuild__posix_wait_for_pid(pid_t pid)
+{
+    for (;;) {
+        int wstatus = 0;
+        waitpid(pid, &wstatus, 0);
+
+        if (WIFEXITED(wstatus)) {
+            int exit_status = WEXITSTATUS(wstatus);
+            if (exit_status != 0) {
+                ERRO("command exited with exit code %d", exit_status);
+                exit(1);
+            }
+
+            break;
+        }
+
+        if (WIFSIGNALED(wstatus)) {
+            ERRO("command process was terminated by %s", strsignal(WTERMSIG(wstatus)));
+            exit(1);
+        }
+    }
+}
+
+Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
+{
+    Pipe_Arg result = {
+        .type = type
+    };
+
+    va_list args;
+
+    size_t count = 0;
+    FOREACH_VARGS_TYPE(type, const char*, arg, args, {
+        count += 1;
+    });
+
+    result.args = malloc(sizeof(const char*) * (count + 1));
+
+    count = 0;
+    FOREACH_VARGS_TYPE(type, const char*, arg, args, {
+        result.args[count++] = arg;
+    });
+    result.args[count] = NULL;
+
+    return result;
+}
+
+const char *nobuild__pipe_arg_as_cstr(Pipe_Arg_Type type)
+{
+    switch (type) {
+    case PIPE_ARG_IN: return "PIPE_ARG_IN";
+    case PIPE_ARG_OUT: return "PIPE_ARG_OUT";
+    case PIPE_ARG_CHAIN: return "PIPE_ARG_CHAIN";
+    default: {
+        assert(0 && "nobuild__pipe_arg_as_cstr: unreachable");
+        return NULL;
+    }
     }
 }
 

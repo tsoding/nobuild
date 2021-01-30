@@ -1,7 +1,7 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nobuild.h"
 
-#define CFLAGS "-Wall", "-Wextra", "-std=c11"//, "-pedantic"
+#define CFLAGS "-Wall", "-Wextra", "-std=c11", "-pedantic", "-ggdb"
 
 void check_example(const char *example)
 {
