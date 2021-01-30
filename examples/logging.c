@@ -1,7 +1,7 @@
 #define NOBUILD_IMPLEMENTATION
 #include "../nobuild.h"
 
-int main(int argc, char *argv[])
+int main(void)
 {
     INFO("    Informational Message");
     WARN("    Warning Message");

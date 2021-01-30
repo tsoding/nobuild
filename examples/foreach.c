@@ -5,7 +5,7 @@ void foreach_vargs(int ignore, ...)
 {
     va_list args;
 
-    FOREACH_VARGS(ignore, arg, args, {
+    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
         INFO("    %s", arg);
     });
 }
@@ -34,7 +34,7 @@ void foreach_file_in_dir(const char *dir_path)
         expr;                                   \
     } while(0)
 
-int main(int argc, char *argv[])
+int main(void)
 {
     DEMO(foreach_vargs(69, "foo", "bar", "baz", NULL));
     DEMO(foreach_array());

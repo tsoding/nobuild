@@ -8,7 +8,7 @@ The idea is that you should not need anything but a C compiler to build a C proj
 
 Try it out right here:
 
-```
+```console
 $ cc ./nobuild.c -o nobuild
 $ ./nobuild
 ```

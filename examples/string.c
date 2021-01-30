@@ -7,7 +7,7 @@
 #define DEMO_D(expr)                         \
     INFO("    " #expr " == %d", expr)
 
-int main(int argc, char *argv[])
+int main(void)
 {
     DEMO_S(CONCAT("foo", "bar", "baz"));
     DEMO_S(PATH("foo", "bar", "baz"));

@@ -4,6 +4,12 @@
 
 *Not Released Yet*
 
+- Introduced `PIPE(...)` macro.
+
+## Deprecations
+
+- `FOREACH_VARGS(...)` is deprecated. Use `FOREACH_VARGS_TYPE(...)` instead.
+
 # 0.2.0 — Removing Everything
 
 *2021-01-30*
