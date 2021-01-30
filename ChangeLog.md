@@ -4,7 +4,10 @@
 
 *Not Released Yet*
 
+## New Features
+
 - Introduced `PIPE(...)` macro.
+- Introduced `PANIC(...)` logging function. It's like `ERRO(...)` but crashes the whole application.
 
 ## Deprecations
 

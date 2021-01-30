@@ -232,6 +232,8 @@ void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
 void INFO(const char *fmt, ...);
 void WARN(const char *fmt, ...);
 void ERRO(const char *fmt, ...);
+void PANIC(const char *fmt, ...);
+
 #endif  // NOBUILD_H_
 
 #ifdef NOBUILD_IMPLEMENTATION
@@ -463,8 +465,7 @@ void mkdirs_impl(int ignore, ...)
             if (errno == EEXIST) {
                 WARN("directory %s already exists", result);
             } else {
-                ERRO("could not create directory %s: %s", result, strerror(errno));
-                exit(1);
+                PANIC("could not create directory %s: %s", result, strerror(errno));
             }
         }
     });
@@ -498,25 +499,21 @@ void nobuild_exec(const char **argv)
 #ifdef _WIN32
     intptr_t status = _spawnvp(_P_WAIT, argv[0], (char * const*) argv);
     if (status < 0) {
-        ERRO("could not start child process: %s", strerror(errno));
-        exit(1);
+        PANIC("could not start child process: %s", strerror(errno));
     }
 
     if (status > 0) {
-        ERRO("command exited with exit code %d", status);
-        exit(1);
+        PANIC("command exited with exit code %d", status);
     }
 #else
     pid_t cpid = fork();
     if (cpid == -1) {
-        ERRO("could not fork a child process: %s", strerror(errno));
-        exit(1);
+        PANIC("could not fork a child process: %s", strerror(errno));
     }
 
     if (cpid == 0) {
         if (execvp(argv[0], (char * const*) argv) < 0) {
-            ERRO("could not execute child process: %s", strerror(errno));
-            exit(1);
+            PANIC("could not execute child process: %s", strerror(errno));
         }
     } else {
         nobuild__posix_wait_for_pid(cpid);
@@ -620,6 +617,15 @@ void ERRO(const char *fmt, ...)
     va_end(args);
 }
 
+void PANIC(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stderr, "ERRO", fmt, args);
+    va_end(args);
+    exit(1);
+}
+
 int nobuild__ends_with(const char *str, const char *postfix)
 {
     const size_t str_n = strlen(str);
@@ -641,9 +647,8 @@ int nobuild__is_dir(const char *path)
             return 0;
         }
 
-        ERRO("could not retrieve information about file %s: %s",
-             path, strerror(errno));
-        exit(1);
+        PANIC("could not retrieve information about file %s: %s",
+              path, strerror(errno));
     }
 
     return S_ISDIR(statbuf.st_mode);
@@ -663,8 +668,7 @@ void nobuild__rm(const char *path)
             if (errno == ENOENT) {
                 WARN("directory %s does not exist");
             } else {
-                ERRO("could not remove directory %s: %s", path, strerror(errno));
-                exit(1);
+                PANIC("could not remove directory %s: %s", path, strerror(errno));
             }
         }
     } else {
@@ -672,8 +676,7 @@ void nobuild__rm(const char *path)
             if (errno == ENOENT) {
                 WARN("file %s does not exist");
             } else {
-                ERRO("could not remove file %s: %s", path, strerror(errno));
-                exit(1);
+                PANIC("could not remove file %s: %s", path, strerror(errno));
             }
         }
     }
@@ -682,8 +685,7 @@ void nobuild__rm(const char *path)
 #ifdef _WIN32
 void nobuild__pipe(int ignore, ...)
 {
-    ERRO("TODO(#14): piping is not implemented on Windows at all");
-    exit(1);
+    PANIC("TODO(#14): piping is not implemented on Windows at all");
 }
 #else
 void nobuild__pipe(int ignore, ...)
@@ -703,8 +705,7 @@ void nobuild__pipe(int ignore, ...)
                     input_filepath = arg.args[0];
                 } else {
                     // TODO(#15): PIPE does not report where exactly a syntactic error has happened
-                    ERRO("input file was already set for the pipe");
-                    exit(1);
+                    PANIC("input file was already set for the pipe");
                 }
             } break;
 
@@ -712,8 +713,7 @@ void nobuild__pipe(int ignore, ...)
                 if (output_filepath == NULL) {
                     output_filepath = arg.args[0];
                 } else {
-                    ERRO("output file was already set for the pipe");
-                    exit(1);
+                    PANIC("output file was already set for the pipe");
                 }
             } break;
 
@@ -733,8 +733,7 @@ void nobuild__pipe(int ignore, ...)
     va_end(args);
 
     if (cmds_count == 0) {
-        ERRO("no chains provided for the pipe");
-        exit(1);
+        PANIC("no chains provided for the pipe");
     }
 
     Pipe_Arg *cmds = malloc(sizeof(Pipe_Arg) * cmds_count);
@@ -757,8 +756,7 @@ void nobuild__pipe(int ignore, ...)
     for (size_t i = 0; i < cmds_count; ++i) {
         cpids[i] = fork();
         if (cpids[i] < 0) {
-            ERRO("could not fork a child: %s", strerror(errno));
-            exit(1);
+            PANIC("could not fork a child: %s", strerror(errno));
         }
 
         if (cpids[i] == 0) {
@@ -767,15 +765,12 @@ void nobuild__pipe(int ignore, ...)
                 if (input_filepath != NULL) {
                     int fdin = open(input_filepath, O_RDONLY);
                     if (fdin < 0) {
-                        ERRO("could not open file %s: %s",
-                             input_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not open file %s: %s", input_filepath, strerror(errno));
                     }
 
                     if (dup2(fdin, STDIN_FILENO) < 0) {
-                        ERRO("could not duplication file descriptor for %s: %s",
-                             input_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not duplication file descriptor for %s: %s",
+                              input_filepath, strerror(errno));
                     }
                 }
             } else {
@@ -789,15 +784,12 @@ void nobuild__pipe(int ignore, ...)
                                      O_WRONLY | O_CREAT | O_TRUNC,
                                      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
                     if (fdout < 0) {
-                        ERRO("could not open file %s: %s",
-                             output_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not open file %s: %s", output_filepath, strerror(errno));
                     }
 
                     if (dup2(fdout, STDOUT_FILENO) < 0) {
-                        ERRO("could not duplication file descriptor for %s: %s",
-                             output_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not duplication file descriptor for %s: %s",
+                              output_filepath, strerror(errno));
                     }
                 }
             } else {
@@ -805,8 +797,7 @@ void nobuild__pipe(int ignore, ...)
             }
 
             if (execvp(cmds[i].args[0], (char * const*) cmds[i].args) < 0) {
-                ERRO("could not execute command: %s", strerror(errno));
-                exit(1);
+                PANIC("could not execute command: %s", strerror(errno));
             }
         }
     }
@@ -827,16 +818,14 @@ void nobuild__posix_wait_for_pid(pid_t pid)
         if (WIFEXITED(wstatus)) {
             int exit_status = WEXITSTATUS(wstatus);
             if (exit_status != 0) {
-                ERRO("command exited with exit code %d", exit_status);
-                exit(1);
+                PANIC("command exited with exit code %d", exit_status);
             }
 
             break;
         }
 
         if (WIFSIGNALED(wstatus)) {
-            ERRO("command process was terminated by %s", strsignal(WTERMSIG(wstatus)));
-            exit(1);
+            PANIC("command process was terminated by %s", strsignal(WTERMSIG(wstatus)));
         }
     }
 }
