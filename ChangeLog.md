@@ -11,7 +11,7 @@
 
 ## Deprecations
 
-- `FOREACH_VARGS(...)` is deprecated. Use `FOREACH_VARGS_TYPE(...)` instead.
+- `FOREACH_VARGS(...)` is deprecated. Use `FOREACH_VARGS_CSTR(...)` instead.
 
 # 0.2.0 — Removing Everything
 

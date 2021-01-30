@@ -119,12 +119,12 @@
 
 #define PATH_SEP_LEN (sizeof(PATH_SEP) - 1)
 
-#define FOREACH_VARGS_TYPE(param, type, arg, args, body)    \
+#define FOREACH_VARGS_CSTR(param, arg, args, body)          \
     do {                                                    \
         va_start(args, param);                              \
-        for (type arg = va_arg(args, type);                 \
+        for (const char *arg = va_arg(args, const char *);  \
              arg != NULL;                                   \
-             arg = va_arg(args, type))                      \
+             arg = va_arg(args, const char *))              \
         {                                                   \
             body;                                           \
         }                                                   \
@@ -133,7 +133,7 @@
 
 #define FOREACH_VARGS(param, arg, args, body)               \
     do {                                                    \
-        WARN("DEPRECATED: Please don't use FOREACH_VARGS(...). Please use FOREACH_VARGS_TYPE(...) instead. FOREACH_VARGS(...) will be removed on the next major release."); \
+        WARN("DEPRECATED: Please don't use FOREACH_VARGS(...). Please use FOREACH_VARGS_CSTR(...) instead. FOREACH_VARGS(...) will be removed on the next major release."); \
         va_start(args, param);                              \
         for (const char *arg = va_arg(args, const char *);  \
              arg != NULL;                                   \
@@ -323,7 +323,7 @@ const char *build__join(const char *sep, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -334,7 +334,7 @@ const char *build__join(const char *sep, ...)
     char *result = malloc(length + seps_count * sep_len + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -361,7 +361,7 @@ const char *build__deprecated_concat_sep(const char *sep, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -372,7 +372,7 @@ const char *build__deprecated_concat_sep(const char *sep, ...)
     char *result = malloc(length + seps_count * sep_len + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -399,7 +399,7 @@ const char *concat_sep_impl(const char *sep, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -410,7 +410,7 @@ const char *concat_sep_impl(const char *sep, ...)
     char *result = malloc(length + seps_count * sep_len + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -434,7 +434,7 @@ void mkdirs_impl(int ignore, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -445,7 +445,7 @@ void mkdirs_impl(int ignore, ...)
     char *result = malloc(length + seps_count * PATH_SEP_LEN + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -475,14 +475,14 @@ const char *concat_impl(int ignore, ...)
 {
     size_t length = 0;
     va_list args;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         length += strlen(arg);
     });
 
     char *result = malloc(length + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -524,14 +524,14 @@ void cmd_impl(int ignore, ...)
     size_t argc = 0;
 
     va_list args;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         argc += 1;
     });
 
     const char **argv = malloc(sizeof(const char*) * (argc + 1));
 
     argc = 0;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         argv[argc++] = arg;
     });
     argv[argc] = NULL;
@@ -838,14 +838,14 @@ Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
     va_list args;
 
     size_t count = 0;
-    FOREACH_VARGS_TYPE(type, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(type, arg, args, {
         count += 1;
     });
 
     result.args = malloc(sizeof(const char*) * (count + 1));
 
     count = 0;
-    FOREACH_VARGS_TYPE(type, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(type, arg, args, {
         result.args[count++] = arg;
     });
     result.args[count] = NULL;
