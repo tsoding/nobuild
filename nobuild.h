@@ -698,7 +698,7 @@ void nobuild__pipe(int ignore, ...)
                 if (input_filepath == NULL) {
                     input_filepath = arg.args[0];
                 } else {
-                    // TODO: PIPE does not report where exactly a syntactic error has happened
+                    // TODO(#15): PIPE does not report where exactly a syntactic error has happened
                     ERRO("input file was already set for the pipe");
                     exit(1);
                 }
