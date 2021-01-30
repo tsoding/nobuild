@@ -119,12 +119,12 @@
 
 #define PATH_SEP_LEN (sizeof(PATH_SEP) - 1)
 
-#define FOREACH_VARGS_TYPE(param, type, arg, args, body)    \
+#define FOREACH_VARGS_CSTR(param, arg, args, body)          \
     do {                                                    \
         va_start(args, param);                              \
-        for (type arg = va_arg(args, type);                 \
+        for (const char *arg = va_arg(args, const char *);  \
              arg != NULL;                                   \
-             arg = va_arg(args, type))                      \
+             arg = va_arg(args, const char *))              \
         {                                                   \
             body;                                           \
         }                                                   \
@@ -133,7 +133,7 @@
 
 #define FOREACH_VARGS(param, arg, args, body)               \
     do {                                                    \
-        WARN("DEPRECATED: Please don't use FOREACH_VARGS(...). Please use FOREACH_VARGS_TYPE(...) instead. FOREACH_VARGS(...) will be removed on the next major release."); \
+        WARN("DEPRECATED: Please don't use FOREACH_VARGS(...). Please use FOREACH_VARGS_CSTR(...) instead. FOREACH_VARGS(...) will be removed on the next major release."); \
         va_start(args, param);                              \
         for (const char *arg = va_arg(args, const char *);  \
              arg != NULL;                                   \
@@ -196,8 +196,6 @@ typedef enum {
     PIPE_ARG_CHAIN,
 } Pipe_Arg_Type;
 
-const char *nobuild__pipe_arg_as_cstr(Pipe_Arg_Type type);
-
 typedef struct {
     Pipe_Arg_Type type;
     const char** args;
@@ -232,6 +230,8 @@ void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
 void INFO(const char *fmt, ...);
 void WARN(const char *fmt, ...);
 void ERRO(const char *fmt, ...);
+void PANIC(const char *fmt, ...);
+
 #endif  // NOBUILD_H_
 
 #ifdef NOBUILD_IMPLEMENTATION
@@ -323,7 +323,7 @@ const char *build__join(const char *sep, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -334,7 +334,7 @@ const char *build__join(const char *sep, ...)
     char *result = malloc(length + seps_count * sep_len + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -361,7 +361,7 @@ const char *build__deprecated_concat_sep(const char *sep, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -372,7 +372,7 @@ const char *build__deprecated_concat_sep(const char *sep, ...)
     char *result = malloc(length + seps_count * sep_len + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -399,7 +399,7 @@ const char *concat_sep_impl(const char *sep, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -410,7 +410,7 @@ const char *concat_sep_impl(const char *sep, ...)
     char *result = malloc(length + seps_count * sep_len + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(sep, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(sep, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -434,7 +434,7 @@ void mkdirs_impl(int ignore, ...)
 
     va_list args;
 
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         length += strlen(arg);
         seps_count += 1;
     });
@@ -445,7 +445,7 @@ void mkdirs_impl(int ignore, ...)
     char *result = malloc(length + seps_count * PATH_SEP_LEN + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -463,8 +463,7 @@ void mkdirs_impl(int ignore, ...)
             if (errno == EEXIST) {
                 WARN("directory %s already exists", result);
             } else {
-                ERRO("could not create directory %s: %s", result, strerror(errno));
-                exit(1);
+                PANIC("could not create directory %s: %s", result, strerror(errno));
             }
         }
     });
@@ -476,14 +475,14 @@ const char *concat_impl(int ignore, ...)
 {
     size_t length = 0;
     va_list args;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         length += strlen(arg);
     });
 
     char *result = malloc(length + 1);
 
     length = 0;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         size_t n = strlen(arg);
         memcpy(result + length, arg, n);
         length += n;
@@ -498,25 +497,21 @@ void nobuild_exec(const char **argv)
 #ifdef _WIN32
     intptr_t status = _spawnvp(_P_WAIT, argv[0], (char * const*) argv);
     if (status < 0) {
-        ERRO("could not start child process: %s", strerror(errno));
-        exit(1);
+        PANIC("could not start child process: %s", strerror(errno));
     }
 
     if (status > 0) {
-        ERRO("command exited with exit code %d", status);
-        exit(1);
+        PANIC("command exited with exit code %d", status);
     }
 #else
     pid_t cpid = fork();
     if (cpid == -1) {
-        ERRO("could not fork a child process: %s", strerror(errno));
-        exit(1);
+        PANIC("could not fork a child process: %s", strerror(errno));
     }
 
     if (cpid == 0) {
         if (execvp(argv[0], (char * const*) argv) < 0) {
-            ERRO("could not execute child process: %s", strerror(errno));
-            exit(1);
+            PANIC("could not execute child process: %s", strerror(errno));
         }
     } else {
         nobuild__posix_wait_for_pid(cpid);
@@ -529,14 +524,14 @@ void cmd_impl(int ignore, ...)
     size_t argc = 0;
 
     va_list args;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         argc += 1;
     });
 
     const char **argv = malloc(sizeof(const char*) * (argc + 1));
 
     argc = 0;
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         argv[argc++] = arg;
     });
     argv[argc] = NULL;
@@ -620,6 +615,15 @@ void ERRO(const char *fmt, ...)
     va_end(args);
 }
 
+void PANIC(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    nobuild_vlog(stderr, "ERRO", fmt, args);
+    va_end(args);
+    exit(1);
+}
+
 int nobuild__ends_with(const char *str, const char *postfix)
 {
     const size_t str_n = strlen(str);
@@ -641,9 +645,8 @@ int nobuild__is_dir(const char *path)
             return 0;
         }
 
-        ERRO("could not retrieve information about file %s: %s",
-             path, strerror(errno));
-        exit(1);
+        PANIC("could not retrieve information about file %s: %s",
+              path, strerror(errno));
     }
 
     return S_ISDIR(statbuf.st_mode);
@@ -663,8 +666,7 @@ void nobuild__rm(const char *path)
             if (errno == ENOENT) {
                 WARN("directory %s does not exist");
             } else {
-                ERRO("could not remove directory %s: %s", path, strerror(errno));
-                exit(1);
+                PANIC("could not remove directory %s: %s", path, strerror(errno));
             }
         }
     } else {
@@ -672,8 +674,7 @@ void nobuild__rm(const char *path)
             if (errno == ENOENT) {
                 WARN("file %s does not exist");
             } else {
-                ERRO("could not remove file %s: %s", path, strerror(errno));
-                exit(1);
+                PANIC("could not remove file %s: %s", path, strerror(errno));
             }
         }
     }
@@ -682,8 +683,7 @@ void nobuild__rm(const char *path)
 #ifdef _WIN32
 void nobuild__pipe(int ignore, ...)
 {
-    ERRO("TODO(#14): piping is not implemented on Windows at all");
-    exit(1);
+    PANIC("TODO(#14): piping is not implemented on Windows at all");
 }
 #else
 void nobuild__pipe(int ignore, ...)
@@ -703,8 +703,7 @@ void nobuild__pipe(int ignore, ...)
                     input_filepath = arg.args[0];
                 } else {
                     // TODO(#15): PIPE does not report where exactly a syntactic error has happened
-                    ERRO("input file was already set for the pipe");
-                    exit(1);
+                    PANIC("input file was already set for the pipe");
                 }
             } break;
 
@@ -712,8 +711,7 @@ void nobuild__pipe(int ignore, ...)
                 if (output_filepath == NULL) {
                     output_filepath = arg.args[0];
                 } else {
-                    ERRO("output file was already set for the pipe");
-                    exit(1);
+                    PANIC("output file was already set for the pipe");
                 }
             } break;
 
@@ -733,8 +731,7 @@ void nobuild__pipe(int ignore, ...)
     va_end(args);
 
     if (cmds_count == 0) {
-        ERRO("no chains provided for the pipe");
-        exit(1);
+        PANIC("no chains provided for the pipe");
     }
 
     Pipe_Arg *cmds = malloc(sizeof(Pipe_Arg) * cmds_count);
@@ -757,8 +754,7 @@ void nobuild__pipe(int ignore, ...)
     for (size_t i = 0; i < cmds_count; ++i) {
         cpids[i] = fork();
         if (cpids[i] < 0) {
-            ERRO("could not fork a child: %s", strerror(errno));
-            exit(1);
+            PANIC("could not fork a child: %s", strerror(errno));
         }
 
         if (cpids[i] == 0) {
@@ -767,15 +763,12 @@ void nobuild__pipe(int ignore, ...)
                 if (input_filepath != NULL) {
                     int fdin = open(input_filepath, O_RDONLY);
                     if (fdin < 0) {
-                        ERRO("could not open file %s: %s",
-                             input_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not open file %s: %s", input_filepath, strerror(errno));
                     }
 
                     if (dup2(fdin, STDIN_FILENO) < 0) {
-                        ERRO("could not duplication file descriptor for %s: %s",
-                             input_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not duplication file descriptor for %s: %s",
+                              input_filepath, strerror(errno));
                     }
                 }
             } else {
@@ -789,15 +782,12 @@ void nobuild__pipe(int ignore, ...)
                                      O_WRONLY | O_CREAT | O_TRUNC,
                                      S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
                     if (fdout < 0) {
-                        ERRO("could not open file %s: %s",
-                             output_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not open file %s: %s", output_filepath, strerror(errno));
                     }
 
                     if (dup2(fdout, STDOUT_FILENO) < 0) {
-                        ERRO("could not duplication file descriptor for %s: %s",
-                             output_filepath, strerror(errno));
-                        exit(1);
+                        PANIC("could not duplication file descriptor for %s: %s",
+                              output_filepath, strerror(errno));
                     }
                 }
             } else {
@@ -805,8 +795,7 @@ void nobuild__pipe(int ignore, ...)
             }
 
             if (execvp(cmds[i].args[0], (char * const*) cmds[i].args) < 0) {
-                ERRO("could not execute command: %s", strerror(errno));
-                exit(1);
+                PANIC("could not execute command: %s", strerror(errno));
             }
         }
     }
@@ -827,16 +816,14 @@ void nobuild__posix_wait_for_pid(pid_t pid)
         if (WIFEXITED(wstatus)) {
             int exit_status = WEXITSTATUS(wstatus);
             if (exit_status != 0) {
-                ERRO("command exited with exit code %d", exit_status);
-                exit(1);
+                PANIC("command exited with exit code %d", exit_status);
             }
 
             break;
         }
 
         if (WIFSIGNALED(wstatus)) {
-            ERRO("command process was terminated by %s", strsignal(WTERMSIG(wstatus)));
-            exit(1);
+            PANIC("command process was terminated by %s", strsignal(WTERMSIG(wstatus)));
         }
     }
 }
@@ -851,32 +838,19 @@ Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
     va_list args;
 
     size_t count = 0;
-    FOREACH_VARGS_TYPE(type, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(type, arg, args, {
         count += 1;
     });
 
     result.args = malloc(sizeof(const char*) * (count + 1));
 
     count = 0;
-    FOREACH_VARGS_TYPE(type, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(type, arg, args, {
         result.args[count++] = arg;
     });
     result.args[count] = NULL;
 
     return result;
-}
-
-const char *nobuild__pipe_arg_as_cstr(Pipe_Arg_Type type)
-{
-    switch (type) {
-    case PIPE_ARG_IN: return "PIPE_ARG_IN";
-    case PIPE_ARG_OUT: return "PIPE_ARG_OUT";
-    case PIPE_ARG_CHAIN: return "PIPE_ARG_CHAIN";
-    default: {
-        assert(0 && "nobuild__pipe_arg_as_cstr: unreachable");
-        return NULL;
-    }
-    }
 }
 
 #endif // NOBUILD_IMPLEMENTATION

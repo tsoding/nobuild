@@ -5,7 +5,7 @@ void foreach_vargs(int ignore, ...)
 {
     va_list args;
 
-    FOREACH_VARGS_TYPE(ignore, const char*, arg, args, {
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
         INFO("    %s", arg);
     });
 }
