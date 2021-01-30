@@ -207,6 +207,7 @@ void nobuild__pipe(int ignore, ...);
 Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...);
 
 #define PIPE(...) nobuild__pipe(69, __VA_ARGS__, nobuild__make_pipe_arg(PIPE_ARG_END, NULL))
+// TODO(#17): IN and OUT are already taken by WinAPI
 #define IN(path) nobuild__make_pipe_arg(PIPE_ARG_IN, path, NULL)
 #define OUT(path) nobuild__make_pipe_arg(PIPE_ARG_OUT, path, NULL)
 #define CHAIN(...) nobuild__make_pipe_arg(PIPE_ARG_CHAIN, __VA_ARGS__, NULL)
