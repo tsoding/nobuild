@@ -245,7 +245,7 @@ Pipe nobuild__make_pipe(int ignore, ...);
 #ifdef _WIN32
 #define PIPE(...) PANIC("Piping is not implemented on windows yet")
 #else
-#define PIPE(...) nobuild__posix_spawn_pipe(nobuild__make_pipe(69, __VA_ARGS__, NULL));
+#define PIPE(...) nobuild__posix_spawn_pipe(nobuild__make_pipe(69, __VA_ARGS__, NULL))
 #endif // _WIN32
 
 // TODO(#17): IN and OUT are already taken by WinAPI
