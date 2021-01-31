@@ -195,11 +195,6 @@ typedef struct {
 
 const char** nobuild_cstr_vargs_to_array(int *count, ...);
 
-pid_t nobuild_spawn_cmd(const Cmd *cmd,
-                        int *fdin,  // NULL means stdin
-                        int *fdout, // NULL means stdout
-                        int *fderr  // NULL means stderr
-                        );
 
 // TODO: pipes do not allow redirecting stderr
 typedef struct {
@@ -209,7 +204,15 @@ typedef struct {
     size_t chain_size;
 } Pipe;
 
-void nobuild_spawn_pipe(Pipe pipe);
+#ifndef _WIN32
+pid_t nobuild__posix_spawn_cmd(const Cmd *cmd,
+                               int *fdin,  // NULL means stdin
+                               int *fdout, // NULL means stdout
+                               int *fderr  // NULL means stderr
+                               );
+
+void nobuild__posix_spawn_pipe(Pipe pipe);
+#endif // _WIN32
 
 typedef enum {
     PIPE_ARG_END,
@@ -239,7 +242,11 @@ Pipe nobuild__make_pipe(int ignore, ...);
         nobuild__rm(path);                      \
     } while(0)
 
-#define PIPE(...) nobuild_spawn_pipe(nobuild__make_pipe(69, __VA_ARGS__, NULL));
+#ifdef _WIN32
+#define PIPE(...) PANIC("Piping is not implemented on windows yet")
+#else
+#define PIPE(...) nobuild__posix_spawn_pipe(nobuild__make_pipe(69, __VA_ARGS__, NULL));
+#endif // _WIN32a
 
 // TODO(#17): IN and OUT are already taken by WinAPI
 #define IN(path)                                                        \
@@ -828,11 +835,12 @@ const char** nobuild_cstr_vargs_to_array(int *out_count, ...)
     return result;
 }
 
-pid_t nobuild_spawn_cmd(const Cmd *cmd,
-                        int *fdin,  // NULL means stdin
-                        int *fdout, // NULL means stdout
-                        int *fderr  // NULL means stdout
-                        )
+#ifndef _WIN32
+pid_t nobuild__posix_spawn_cmd(const Cmd *cmd,
+                               int *fdin,  // NULL means stdin
+                               int *fdout, // NULL means stdout
+                               int *fderr  // NULL means stdout
+                               )
 {
     pid_t cpid = fork();
 
@@ -867,7 +875,7 @@ pid_t nobuild_spawn_cmd(const Cmd *cmd,
     return cpid;
 }
 
-void nobuild_spawn_pipe(Pipe my_pipe)
+void nobuild__posix_spawn_pipe(Pipe my_pipe)
 {
     if (my_pipe.chain_size == 0) {
         return;
@@ -892,7 +900,7 @@ void nobuild_spawn_pipe(Pipe my_pipe)
             PANIC("could not create pipe for a child process: %s", strerror(errno));
         }
 
-        cpids[i] = nobuild_spawn_cmd(
+        cpids[i] = nobuild__posix_spawn_cmd(
             &my_pipe.chain[i],
             fdprev,
             &pipefd[1],
@@ -922,7 +930,7 @@ void nobuild_spawn_pipe(Pipe my_pipe)
 
         const size_t last = my_pipe.chain_size - 1;
         cpids[last] =
-            nobuild_spawn_cmd(
+            nobuild__posix_spawn_cmd(
             &my_pipe.chain[last],
             fdprev,
             fdnext,
@@ -936,5 +944,7 @@ void nobuild_spawn_pipe(Pipe my_pipe)
         nobuild__posix_wait_for_pid(cpids[i]);
     }
 }
+
+#endif // _WIN32
 
 #endif // NOBUILD_IMPLEMENTATION
