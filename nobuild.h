@@ -205,11 +205,11 @@ pid_t nobuild_spawn_cmd(const Cmd *cmd,
 typedef struct {
     const char *input_filepath;  // NULL means stdin
     const char *output_filepath; // NULL means stdout
-    const Cmd *chain;
+    Cmd *chain;
     size_t chain_size;
 } Pipe;
 
-pid_t *nobuild_spawn_pipe(const Pipe *pipe);
+void nobuild_spawn_pipe(Pipe pipe);
 
 typedef enum {
     PIPE_ARG_END,
@@ -223,14 +223,7 @@ typedef struct {
     const char** args;
 } Pipe_Arg;
 
-void nobuild__pipe(int ignore, ...);
-Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...);
-
-#define PIPE(...) nobuild__pipe(69, __VA_ARGS__, nobuild__make_pipe_arg(PIPE_ARG_END, NULL))
-// TODO(#17): IN and OUT are already taken by WinAPI
-#define IN(path) nobuild__make_pipe_arg(PIPE_ARG_IN, path, NULL)
-#define OUT(path) nobuild__make_pipe_arg(PIPE_ARG_OUT, path, NULL)
-#define CHAIN(...) nobuild__make_pipe_arg(PIPE_ARG_CHAIN, __VA_ARGS__, NULL)
+Pipe nobuild__make_pipe(int ignore, ...);
 
 #define CONCAT(...) concat_impl(69, __VA_ARGS__, NULL)
 #define CONCAT_SEP(sep, ...) build__deprecated_concat_sep(sep, __VA_ARGS__, NULL)
@@ -245,6 +238,32 @@ Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...);
         INFO("rm %s", path);                    \
         nobuild__rm(path);                      \
     } while(0)
+
+#define PIPE(...) nobuild_spawn_pipe(nobuild__make_pipe(69, __VA_ARGS__, NULL));
+
+// TODO(#17): IN and OUT are already taken by WinAPI
+#define IN(path)                                                        \
+    ((Pipe_Arg) {                                                       \
+        .type = PIPE_ARG_IN,                                            \
+        .args = nobuild_cstr_vargs_to_array(NULL, path, NULL)           \
+    })
+
+#define OUT(path)                                                       \
+    ((Pipe_Arg) {                                                       \
+        .type = PIPE_ARG_OUT,                                           \
+        .args = nobuild_cstr_vargs_to_array(NULL, path, NULL)           \
+    })
+
+#define CHAIN(...)                                                      \
+    ((Pipe_Arg) {                                                       \
+        .type = PIPE_ARG_CHAIN,                                         \
+        .args = nobuild_cstr_vargs_to_array(NULL, __VA_ARGS__, NULL)    \
+    })
+
+#define END                                     \
+    ((Pipe_Arg) {                               \
+        .type = PIPE_ARG_END                    \
+    })
 
 void nobuild_log(FILE *stream, const char *tag, const char *fmt, ...);
 void nobuild_vlog(FILE *stream, const char *tag, const char *fmt, va_list args);
@@ -702,17 +721,9 @@ void nobuild__rm(const char *path)
     }
 }
 
-#ifdef _WIN32
-void nobuild__pipe(int ignore, ...)
+Pipe nobuild__make_pipe(int ignore, ...)
 {
-    PANIC("TODO(#14): piping is not implemented on Windows at all");
-}
-#else
-void nobuild__pipe(int ignore, ...)
-{
-    const char *input_filepath = NULL;
-    const char *output_filepath = NULL;
-    size_t cmds_count = 0;
+    Pipe result = {0};
 
     va_list args;
     va_start(args, ignore);
@@ -721,8 +732,8 @@ void nobuild__pipe(int ignore, ...)
         while (arg.type != PIPE_ARG_END) {
             switch (arg.type) {
             case PIPE_ARG_IN: {
-                if (input_filepath == NULL) {
-                    input_filepath = arg.args[0];
+                if (result.input_filepath == NULL) {
+                    result.input_filepath = arg.args[0];
                 } else {
                     // TODO(#15): PIPE does not report where exactly a syntactic error has happened
                     PANIC("input file was already set for the pipe");
@@ -730,15 +741,15 @@ void nobuild__pipe(int ignore, ...)
             } break;
 
             case PIPE_ARG_OUT: {
-                if (output_filepath == NULL) {
-                    output_filepath = arg.args[0];
+                if (result.output_filepath == NULL) {
+                    result.output_filepath = arg.args[0];
                 } else {
                     PANIC("output file was already set for the pipe");
                 }
             } break;
 
             case PIPE_ARG_CHAIN: {
-                cmds_count += 1;
+                result.chain_size += 1;
             } break;
 
             case PIPE_ARG_END:
@@ -752,81 +763,23 @@ void nobuild__pipe(int ignore, ...)
     }
     va_end(args);
 
-    if (cmds_count == 0) {
-        PANIC("no chains provided for the pipe");
-    }
+    result.chain = malloc(sizeof(Cmd) * result.chain_size);
 
-    Pipe_Arg *cmds = malloc(sizeof(Pipe_Arg) * cmds_count);
-    pid_t *cpids = malloc(sizeof(pid_t) * cmds_count);
-
-    cmds_count = 0;
+    result.chain_size = 0;
     va_start(args, ignore);
     {
         Pipe_Arg arg = va_arg(args, Pipe_Arg);
         while (arg.type != PIPE_ARG_END) {
             if (arg.type == PIPE_ARG_CHAIN) {
-                cmds[cmds_count++] = arg;
+                result.chain[result.chain_size++].args = arg.args;
             }
             arg = va_arg(args, Pipe_Arg);
         }
     }
     va_end(args);
 
-    // TODO(#16): input/output piping is not implemented for Linux
-    for (size_t i = 0; i < cmds_count; ++i) {
-        cpids[i] = fork();
-        if (cpids[i] < 0) {
-            PANIC("could not fork a child: %s", strerror(errno));
-        }
-
-        if (cpids[i] == 0) {
-            // Chain is first and there is input file
-            if (i == 0) {
-                if (input_filepath != NULL) {
-                    int fdin = open(input_filepath, O_RDONLY);
-                    if (fdin < 0) {
-                        PANIC("could not open file %s: %s", input_filepath, strerror(errno));
-                    }
-
-                    if (dup2(fdin, STDIN_FILENO) < 0) {
-                        PANIC("could not duplication file descriptor for %s: %s",
-                              input_filepath, strerror(errno));
-                    }
-                }
-            } else {
-                assert(0 && "input piping is not implemented");
-            }
-
-            // Chain is last and there is output file
-            if (i == cmds_count - 1) {
-                if (output_filepath != NULL) {
-                    int fdout = open(output_filepath,
-                                     O_WRONLY | O_CREAT | O_TRUNC,
-                                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-                    if (fdout < 0) {
-                        PANIC("could not open file %s: %s", output_filepath, strerror(errno));
-                    }
-
-                    if (dup2(fdout, STDOUT_FILENO) < 0) {
-                        PANIC("could not duplication file descriptor for %s: %s",
-                              output_filepath, strerror(errno));
-                    }
-                }
-            } else {
-                assert(0 && "output piping is not implemented");
-            }
-
-            if (execvp(cmds[i].args[0], (char * const*) cmds[i].args) < 0) {
-                PANIC("could not execute command: %s", strerror(errno));
-            }
-        }
-    }
-
-    for (size_t i = 0; i < cmds_count; ++i) {
-        nobuild__posix_wait_for_pid(cpids[i]);
-    }
+    return result;
 }
-#endif // _WIN32
 
 #ifndef _WIN32
 void nobuild__posix_wait_for_pid(pid_t pid)
@@ -850,30 +803,6 @@ void nobuild__posix_wait_for_pid(pid_t pid)
     }
 }
 #endif
-
-Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
-{
-    Pipe_Arg result = {
-        .type = type
-    };
-
-    va_list args;
-
-    size_t count = 0;
-    FOREACH_VARGS_CSTR(type, arg, args, {
-        count += 1;
-    });
-
-    result.args = malloc(sizeof(const char*) * (count + 1));
-
-    count = 0;
-    FOREACH_VARGS_CSTR(type, arg, args, {
-        result.args[count++] = arg;
-    });
-    result.args[count] = NULL;
-
-    return result;
-}
 
 const char** nobuild_cstr_vargs_to_array(int *out_count, ...)
 {
@@ -938,33 +867,33 @@ pid_t nobuild_spawn_cmd(const Cmd *cmd,
     return cpid;
 }
 
-pid_t *nobuild_spawn_pipe(const Pipe *my_pipe)
+void nobuild_spawn_pipe(Pipe my_pipe)
 {
-    if (my_pipe->chain_size == 0) {
-        return NULL;
+    if (my_pipe.chain_size == 0) {
+        return;
     }
 
-    pid_t *cpids = malloc(sizeof(pid_t) * my_pipe->chain_size);
+    pid_t *cpids = malloc(sizeof(pid_t) * my_pipe.chain_size);
 
     int pipefd[2] = {0};
     int fdin = 0;
     int *fdprev = NULL;
 
-    if (my_pipe->input_filepath) {
-        fdin = open(my_pipe->input_filepath, O_RDONLY);
+    if (my_pipe.input_filepath) {
+        fdin = open(my_pipe.input_filepath, O_RDONLY);
         if (fdin < 0) {
-            PANIC("could not open file %s: %s", my_pipe->input_filepath, strerror(errno));
+            PANIC("could not open file %s: %s", my_pipe.input_filepath, strerror(errno));
         }
         fdprev = &fdin;
     }
 
-    for (size_t i = 0; i < my_pipe->chain_size - 1; ++i) {
+    for (size_t i = 0; i < my_pipe.chain_size - 1; ++i) {
         if (pipe(pipefd) < 0) {
             PANIC("could not create pipe for a child process: %s", strerror(errno));
         }
 
         cpids[i] = nobuild_spawn_cmd(
-            &my_pipe->chain[i],
+            &my_pipe.chain[i],
             fdprev,
             &pipefd[1],
             NULL);
@@ -979,22 +908,22 @@ pid_t *nobuild_spawn_pipe(const Pipe *my_pipe)
         int fdout = 0;
         int *fdnext = NULL;
 
-        if (my_pipe->output_filepath) {
-            fdout = open(my_pipe->output_filepath,
+        if (my_pipe.output_filepath) {
+            fdout = open(my_pipe.output_filepath,
                          O_WRONLY | O_CREAT | O_TRUNC,
                          S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
             if (fdout < 0) {
                 PANIC("could not open file %s: %s",
-                      my_pipe->output_filepath,
+                      my_pipe.output_filepath,
                       strerror(errno));
             }
             fdnext = &fdout;
         }
 
-        const size_t last = my_pipe->chain_size - 1;
+        const size_t last = my_pipe.chain_size - 1;
         cpids[last] =
             nobuild_spawn_cmd(
-            &my_pipe->chain[last],
+            &my_pipe.chain[last],
             fdprev,
             fdnext,
             NULL);
@@ -1003,8 +932,9 @@ pid_t *nobuild_spawn_pipe(const Pipe *my_pipe)
         if (fdnext) close(*fdnext);
     }
 
-    return cpids;
+    for (size_t i = 0; i < my_pipe.chain_size; ++i) {
+        nobuild__posix_wait_for_pid(cpids[i]);
+    }
 }
-
 
 #endif // NOBUILD_IMPLEMENTATION
