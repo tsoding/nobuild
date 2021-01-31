@@ -7,11 +7,7 @@ int main(void)
     WARN("Piping is not implemented on Windows yet");
 #else
     PIPE(IN(PATH("examples", "pipe.c")),
-         CHAIN("sort", "-rn"),
-         CHAIN("rev"),
-         CHAIN("base64"),
-         CHAIN("gzip", "-f"),
-         CHAIN("hexdump", "-C"));
+         CHAIN(PATH("tools", "xxd")));
 #endif
 
     return 0;
