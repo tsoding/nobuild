@@ -196,7 +196,7 @@ typedef struct {
 const char** nobuild_cstr_vargs_to_array(int *count, ...);
 
 
-// TODO: pipes do not allow redirecting stderr
+// TODO(#20): pipes do not allow redirecting stderr
 typedef struct {
     const char *input_filepath;  // NULL means stdin
     const char *output_filepath; // NULL means stdout
