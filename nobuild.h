@@ -189,6 +189,28 @@ void nobuild__rm(const char *path);
 void nobuild__posix_wait_for_pid(pid_t pid);
 #endif
 
+typedef struct {
+    const char **args;
+} Cmd;
+
+const char** nobuild_cstr_vargs_to_array(int ignore, ...);
+
+pid_t nobuild_spawn_cmd(const Cmd *cmd,
+                        int *fdin,  // NULL means stdin
+                        int *fdout, // NULL means stdout
+                        int *fderr  // NULL means stderr
+                        );
+
+// TODO: pipes do not allow redirecting stderr
+typedef struct {
+    const char *input_filepath;  // NULL means stdin
+    const char *output_filepath; // NULL means stdout
+    const Cmd *chain;
+    size_t chain_size;
+} Pipe;
+
+pid_t *nobuild_spawn_pipe(const Pipe *pipe);
+
 typedef enum {
     PIPE_ARG_END,
     PIPE_ARG_IN,
@@ -852,5 +874,132 @@ Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
 
     return result;
 }
+
+const char** nobuild_cstr_vargs_to_array(int ignore, ...)
+{
+    size_t count = 0;
+    va_list args;
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
+        count += 1;
+    });
+
+    const char **result = malloc(sizeof(const char *) * (count + 1));
+
+    count = 0;
+    FOREACH_VARGS_CSTR(ignore, arg, args, {
+        result[count++] = arg;
+    });
+
+    result[count] = NULL;
+    return result;
+}
+
+pid_t nobuild_spawn_cmd(const Cmd *cmd,
+                        int *fdin,  // NULL means stdin
+                        int *fdout, // NULL means stdout
+                        int *fderr  // NULL means stdout
+                        )
+{
+    pid_t cpid = fork();
+
+    if (cpid < 0) {
+        PANIC("could not fork a child: %s", strerror(errno));
+    }
+
+    if (cpid == 0) {
+        if (fdin) {
+            if (dup2(*fdin, STDIN_FILENO) < 0) {
+                PANIC("could not setup stdin for child process: %s", strerror(errno));
+            }
+        }
+
+        if (fdout) {
+            if (dup2(*fdout, STDOUT_FILENO) < 0) {
+                PANIC("could not setup stdout for child process: %s", strerror(errno));
+            }
+        }
+
+        if (fderr) {
+            if (dup2(*fderr, STDERR_FILENO) < 0) {
+                PANIC("could not setup stderr for child process: %s", strerror(errno));
+            }
+        }
+
+        if (execvp(cmd->args[0], (char * const*) cmd->args) < 0) {
+            PANIC("could not exec child process: %s", strerror(errno));
+        }
+    }
+
+    return cpid;
+}
+
+pid_t *nobuild_spawn_pipe(const Pipe *my_pipe)
+{
+    if (my_pipe->chain_size == 0) {
+        return NULL;
+    }
+
+    pid_t *cpids = malloc(sizeof(pid_t) * my_pipe->chain_size);
+
+    int pipefd[2] = {0};
+    int fdin = 0;
+    int *fdprev = NULL;
+
+    if (my_pipe->input_filepath) {
+        fdin = open(my_pipe->input_filepath, O_RDONLY);
+        if (fdin < 0) {
+            PANIC("could not open file %s: %s", my_pipe->input_filepath, strerror(errno));
+        }
+        fdprev = &fdin;
+    }
+
+    for (size_t i = 0; i < my_pipe->chain_size - 1; ++i) {
+        if (pipe(pipefd) < 0) {
+            PANIC("could not create pipe for a child process: %s", strerror(errno));
+        }
+
+        cpids[i] = nobuild_spawn_cmd(
+            &my_pipe->chain[i],
+            fdprev,
+            &pipefd[1],
+            NULL);
+
+        if (fdprev) close(*fdprev);
+        close(pipefd[1]);
+        fdprev = &fdin;
+        fdin = pipefd[0];
+    }
+
+    {
+        int fdout = 0;
+        int *fdnext = NULL;
+
+        if (my_pipe->output_filepath) {
+            fdout = open(my_pipe->output_filepath,
+                         O_WRONLY | O_CREAT | O_TRUNC,
+                         S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            if (fdout < 0) {
+                PANIC("could not open file %s: %s",
+                      my_pipe->output_filepath,
+                      strerror(errno));
+            }
+            fdnext = &fdout;
+        }
+
+        const size_t last = my_pipe->chain_size - 1;
+        cpids[last] =
+            nobuild_spawn_cmd(
+            &my_pipe->chain[last],
+            fdprev,
+            fdnext,
+            NULL);
+
+        if (fdprev) close(*fdprev);
+        if (fdnext) close(*fdnext);
+    }
+
+    return cpids;
+}
+
 
 #endif // NOBUILD_IMPLEMENTATION
