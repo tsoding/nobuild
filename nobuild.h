@@ -193,7 +193,7 @@ typedef struct {
     const char **args;
 } Cmd;
 
-const char** nobuild_cstr_vargs_to_array(int ignore, ...);
+const char** nobuild_cstr_vargs_to_array(int *count, ...);
 
 pid_t nobuild_spawn_cmd(const Cmd *cmd,
                         int *fdin,  // NULL means stdin
@@ -875,22 +875,27 @@ Pipe_Arg nobuild__make_pipe_arg(Pipe_Arg_Type type, ...)
     return result;
 }
 
-const char** nobuild_cstr_vargs_to_array(int ignore, ...)
+const char** nobuild_cstr_vargs_to_array(int *out_count, ...)
 {
     size_t count = 0;
     va_list args;
-    FOREACH_VARGS_CSTR(ignore, arg, args, {
+    FOREACH_VARGS_CSTR(out_count, arg, args, {
         count += 1;
     });
 
     const char **result = malloc(sizeof(const char *) * (count + 1));
 
     count = 0;
-    FOREACH_VARGS_CSTR(ignore, arg, args, {
+    FOREACH_VARGS_CSTR(out_count, arg, args, {
         result[count++] = arg;
     });
 
     result[count] = NULL;
+
+    if (out_count) {
+        *out_count = count;
+    }
+
     return result;
 }
 
