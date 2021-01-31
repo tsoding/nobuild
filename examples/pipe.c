@@ -7,6 +7,7 @@ int main(void)
     WARN("Piping is not implemented on Windows yet");
 #else
     PIPE(IN(PATH("examples", "pipe.c")),
+         CHAIN(PATH("tools", "rot13")),
          CHAIN(PATH("tools", "hex")));
 #endif
 
