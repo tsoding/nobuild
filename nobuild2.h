@@ -8,13 +8,11 @@
 #    include <sys/stat.h>
 #    include <unistd.h>
 #    include <dirent.h>
-#    define PATH_SEP "/"
      typedef pid_t Pid;
 #else
 #    define WIN32_MEAN_AND_LEAN
 #    include "windows.h"
 #    include <process.h>
-#    define PATH_SEP "\\"
 // minirent.h HEADER BEGIN ////////////////////////////////////////
     // Copyright 2021 Alexey Kutepov <reximkut@gmail.com>
     //
@@ -72,6 +70,12 @@
 typedef HANDLE Pid;
 
 #endif  // _WIN32
+
+#ifdef _WIN32
+#    define PATH_SEP "\\"
+#else
+#    define PATH_SEP "/"
+#endif // _WIN32
 
 #include <stdio.h>
 #include <stdlib.h>
