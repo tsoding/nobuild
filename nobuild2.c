@@ -1,19 +1,31 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nobuild2.h"
 
-void print_cstr_array(Cstr_Array cstrs)
+void build_tools(void)
 {
-    printf("#");
-    for (size_t i = 0; i < cstrs.count; ++i) {
-        printf("%s ", cstrs.elems[i]);
-    }
-    printf("#\n");
+    FOREACH_FILE_IN_DIR(tool, "tools", {
+        if (ENDS_WITH(tool, ".c")) {
+            Cstr tool_path = PATH("tools", tool);
+            CMD("cc", "-o", NOEXT(tool_path), tool_path);
+        }
+    });
+}
+
+void run_examples(void)
+{
+    FOREACH_FILE_IN_DIR(example, "examples", {
+        if (ENDS_WITH(example, ".c")) {
+            Cstr example_path = PATH("examples", example);
+            CMD("cc", "-o", NOEXT(example_path), example_path);
+            CMD(NOEXT(example_path));
+        }
+    });
 }
 
 int main(void)
 {
-    printf("%s\n", PATH("foo", "bar"));
-    printf("%s\n", CONCAT("foo", "bar"));
-    printf("%s\n", JOIN("++", "foo", "bar", "baz"));
+    build_tools();
+    run_examples();
+
     return 0;
 }
