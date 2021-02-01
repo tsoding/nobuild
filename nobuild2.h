@@ -72,6 +72,7 @@
 
 #endif  // _WIN32
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -400,6 +401,7 @@ Pid cmd_line_run_async(Cmd_Line cmd_line)
 {
 #ifdef _WIN32
     PANIC("TODO: cmd_line_run_sync is not implemented for WinAPI");
+    return 0;
 #else
     pid_t cpid = fork();
     if (cpid < 0) {
