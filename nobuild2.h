@@ -13,6 +13,7 @@
 #else
 #    define WIN32_MEAN_AND_LEAN
 #    include "windows.h"
+#    include <process.h>
 #    define PATH_SEP "\\"
      typedef HANDLE Pid;
 #endif  // _WIN32
