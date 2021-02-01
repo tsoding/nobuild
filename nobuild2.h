@@ -228,7 +228,7 @@ Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs)
 void pid_wait(Pid pid)
 {
 #ifdef _WIN32
-#error "TODO: pid_wait is not implemented for WinAPI"
+    PANIC("TODO: pid_wait is not implemented for WinAPI");
 #else
     for (;;) {
         int wstatus = 0;
@@ -265,7 +265,7 @@ Cstr cmd_line_show(Cmd_Line cmd_line)
 Pid cmd_line_run_async(Cmd_Line cmd_line)
 {
 #ifdef _WIN32
-#error "TODO: cmd_line_run_sync is not implemented for WinAPI"
+    PANIC("TODO: cmd_line_run_sync is not implemented for WinAPI");
 #else
     pid_t cpid = fork();
     if (cpid < 0) {
