@@ -1,13 +1,8 @@
 #ifndef NOBUILD_H_
 #define NOBUILD_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
-
 #ifndef _WIN32
+#    define _POSIX_C_SOURCE 200809L
 #    include <sys/types.h>
 #    include <sys/wait.h>
 #    include <sys/stat.h>
@@ -21,6 +16,12 @@
 #    define PATH_SEP "\\"
      typedef HANDLE Pid;
 #endif  // _WIN32
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <errno.h>
 
 typedef const char * Cstr;
 

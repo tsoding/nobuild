@@ -12,7 +12,7 @@ char rot13(char x)
 
 char buffer[BUFFER_SIZE];
 
-int main(int argc, char *argv[])
+int main(void)
 {
     while (!feof(stdin)) {
         size_t n = fread(buffer, sizeof(buffer[0]), BUFFER_SIZE, stdin);

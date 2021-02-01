@@ -9,7 +9,7 @@
 
 uint8_t buffer[COLUMNS];
 
-int main(int argc, char *argv[])
+int main(void)
 {
     while (!feof(stdin)) {
         size_t n = fread(buffer, sizeof(buffer[0]), COLUMNS, stdin);
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         }
 
         assert(n <= COLUMNS);
-        printf("%*s", PADDING + (COLUMNS - n) * 3, "");
+        printf("%*s", (int) (PADDING + (COLUMNS - n) * 3), "");
 
         fwrite(buffer, sizeof(buffer[0]), n, stdout);
         printf("\n");
