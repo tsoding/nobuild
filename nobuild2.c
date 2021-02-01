@@ -12,9 +12,8 @@ void print_cstr_array(Cstr_Array cstrs)
 
 int main(void)
 {
-    print_cstr_array(cstr_array_make(NULL));
-    print_cstr_array(cstr_array_make("foo", NULL));
-    print_cstr_array(cstr_array_make("foo", "bar", NULL));
-    print_cstr_array(cstr_array_make("foo", "bar", "baz", NULL));
+    printf("%s\n", PATH("foo", "bar"));
+    printf("%s\n", CONCAT("foo", "bar"));
+    printf("%s\n", JOIN("++", "foo", "bar", "baz"));
     return 0;
 }
