@@ -287,7 +287,18 @@ Pid cmd_line_run_async(Cmd_Line cmd_line)
 
 void cmd_line_run_sync(Cmd_Line cmd_line)
 {
+#ifndef _WIN32
     pid_wait(cmd_line_run_async(cmd_line));
+#else
+    intptr_t status = _spawnvp(_P_WAIT, cmd_line.line[0], (char * const*) cmd_line.line);
+    if (status < 0) {
+        PANIC("could not start child process: %s", strerror(errno));
+    }
+
+    if (status > 0) {
+        PANIC("command exited with exit code %d", status);
+    }
+#endif  // _WIN32
 }
 
 int path_is_dir(Cstr path)
