@@ -44,10 +44,8 @@ void run_examples(void)
 
 int main(void)
 {
-    INFO("test");
-    build_tool("rot13.c");
-    // build_tools();
-    // run_examples();
+    build_tools();
+    run_examples();
 
     return 0;
 }
