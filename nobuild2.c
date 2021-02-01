@@ -44,8 +44,9 @@ void run_examples(void)
 
 int main(void)
 {
-    build_tools();
-    run_examples();
+    INFO("test");
+    // build_tools();
+    // run_examples();
 
     return 0;
 }
