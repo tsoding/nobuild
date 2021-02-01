@@ -8,8 +8,8 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
-          $CC nobuild.c -o nobuild
-          ./nobuild
+          $CC nobuild2.c -o nobuild2
+          ./nobuild2
         env:
           CC: gcc
           CXX: g++
@@ -19,8 +19,8 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
-          $CC nobuild.c -o nobuild
-          ./nobuild
+          $CC nobuild2.c -o nobuild2
+          ./nobuild2
         env:
           CC: clang
           CXX: clang++
@@ -30,8 +30,8 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
-          $CC nobuild.c -o nobuild
-          ./nobuild
+          $CC nobuild2.c -o nobuild2
+          ./nobuild2
         env:
           CC: clang
           CXX: clang++
@@ -45,5 +45,5 @@ jobs:
         shell: cmd
         # this replaces default PowerShell, which can't fail the build
         run: |
-          cl.exe nobuild.c
-          .\nobuild.exe test
+          cl.exe nobuild2.c
+          .\nobuild2.exe test
