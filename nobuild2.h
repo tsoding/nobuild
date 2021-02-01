@@ -15,7 +15,6 @@
 #    include "windows.h"
 #    include <process.h>
 #    define PATH_SEP "\\"
-     typedef HANDLE Pid;
 // minirent.h HEADER BEGIN ////////////////////////////////////////
     // Copyright 2021 Alexey Kutepov <reximkut@gmail.com>
     //
@@ -69,6 +68,9 @@
 
     #endif  // MINIRENT_H_
 // minirent.h HEADER END ////////////////////////////////////////
+
+typedef HANDLE Pid;
+
 #endif  // _WIN32
 
 #include <stdio.h>
