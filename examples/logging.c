@@ -5,7 +5,7 @@ int main(void)
 {
     INFO("    Informational Message");
     WARN("    Warning Message");
-    ERROR("    Error Message");
+    ERRO("    Error Message");
 
     return 0;
 }

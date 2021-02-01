@@ -105,7 +105,7 @@ void path_rm(Cstr path);
 void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
 void INFO(Cstr fmt, ...);
 void WARN(Cstr fmt, ...);
-void ERROR(Cstr fmt, ...);
+void ERRO(Cstr fmt, ...);
 void PANIC(Cstr fmt, ...);
 
 #endif  // NOBUILD_H_
@@ -414,11 +414,11 @@ void WARN(Cstr fmt, ...)
     va_end(args);
 }
 
-void ERROR(Cstr fmt, ...)
+void ERRO(Cstr fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    VLOG(stderr, "ERROR", fmt, args);
+    VLOG(stderr, "ERRO", fmt, args);
     va_end(args);
 }
 
@@ -426,7 +426,7 @@ void PANIC(Cstr fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    VLOG(stderr, "ERROR", fmt, args);
+    VLOG(stderr, "ERRO", fmt, args);
     va_end(args);
     exit(1);
 }
