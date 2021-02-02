@@ -42,10 +42,25 @@ void run_examples(void)
     });
 }
 
+
+void print_chain(const Chain *chain)
+{
+    INFO("input: %s", chain->input_filepath);
+    INFO("output: %s", chain->output_filepath);
+    FOREACH_ARRAY(Cmd_Line, cmd_line, chain->cmd_lines, {
+        INFO("cmd: %s", cmd_line_show(*cmd_line));
+    });
+}
+
 int main(void)
 {
-    build_tools();
-    run_examples();
+    CHAIN(IN(__FILE__),
+          CHAIN_CMD(PATH("tools", "rot13")),
+          CHAIN_CMD(PATH("tools", "hex")),
+          OUT("output.txt"));
+
+    // build_tools();
+    // run_examples();
 
     return 0;
 }
