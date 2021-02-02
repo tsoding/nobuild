@@ -54,13 +54,8 @@ void print_chain(const Chain *chain)
 
 int main(void)
 {
-    CHAIN(IN(__FILE__),
-          CHAIN_CMD(PATH("tools", "rot13")),
-          CHAIN_CMD(PATH("tools", "hex")),
-          OUT("output.txt"));
-
-    // build_tools();
-    // run_examples();
+    build_tools();
+    run_examples();
 
     return 0;
 }

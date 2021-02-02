@@ -113,6 +113,13 @@ Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs);
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 
 typedef struct {
+    Fd read;
+    Fd write;
+} Pipe;
+
+Pipe pipe_make(void);
+
+typedef struct {
     Cstr_Array line;
 } Cmd_Line;
 
@@ -425,6 +432,35 @@ Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs)
     return result;
 }
 
+Pipe pipe_make(void)
+{
+    Pipe pip = {0};
+
+#ifdef _WIN32
+    // https://docs.microsoft.com/en-us/windows/win32/ProcThread/creating-a-child-process-with-redirected-input-and-output
+
+    SECURITY_ATTRIBUTES saAttr;
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
+    if (!CreatePipe(&pip.read, &pip.write, &saAttr, 0)) {
+        // TODO: WinAPI version of pipe_make does not provide enough details on failure
+        PANIC("Could not create pipe");
+    }
+#else
+    Fd pipefd[2];
+    if (pipe(pipefd) < 0) {
+        PANIC("Could not create pipe: %s", strerror(errno));
+    }
+
+    pip.read = pipefd[0];
+    pip.write = pipefd[1];
+#endif // _WIN32
+
+    return pip;
+}
+
 void pid_wait(Pid pid)
 {
 #ifdef _WIN32
@@ -600,7 +636,7 @@ void chain_run_sync(Chain chain)
 
     Pid *cpids = malloc(sizeof(pid_t) * chain.cmd_lines.count);
 
-    Fd pipefd[2] = {0};
+    Pipe pip = {0};
     Fd fdin = 0;
     Fd *fdprev = NULL;
 
@@ -613,19 +649,17 @@ void chain_run_sync(Chain chain)
     }
 
     for (size_t i = 0; i < chain.cmd_lines.count - 1; ++i) {
-        if (pipe(pipefd) < 0) {
-            PANIC("could not create pipe for a child process: %s", strerror(errno));
-        }
+        pip = pipe_make();
 
         cpids[i] = cmd_line_run_async(
             chain.cmd_lines.elems[i],
             fdprev,
-            &pipefd[1]);
+            &pip.write);
 
         if (fdprev) close(*fdprev);
-        close(pipefd[1]);
+        close(pip.write);
         fdprev = &fdin;
-        fdin = pipefd[0];
+        fdin = pip.read;
     }
 
     {
