@@ -125,6 +125,7 @@ typedef struct {
 
 #define CMD_LINE(...) ((Cmd_Line) { .line = cstr_array_make(__VA_ARGS__, NULL) })
 
+void fd_close(Fd fd);
 void pid_wait(Pid pid);
 Cstr cmd_line_show(Cmd_Line cmd_line);
 Pid cmd_line_run_async(Cmd_Line cmd_line, Fd *fdin, Fd *fdout);
@@ -461,6 +462,15 @@ Pipe pipe_make(void)
     return pip;
 }
 
+void fd_close(Fd fd)
+{
+#ifdef _WIN32
+    CloseHandle(fd);
+#else
+    close(fd);
+#endif // _WIN32
+}
+
 void pid_wait(Pid pid)
 {
 #ifdef _WIN32
@@ -656,8 +666,8 @@ void chain_run_sync(Chain chain)
             fdprev,
             &pip.write);
 
-        if (fdprev) close(*fdprev);
-        close(pip.write);
+        if (fdprev) fd_close(*fdprev);
+        fd_close(pip.write);
         fdprev = &fdin;
         fdin = pip.read;
     }
@@ -685,8 +695,8 @@ void chain_run_sync(Chain chain)
                 fdprev,
                 fdnext);
 
-        if (fdprev) close(*fdprev);
-        if (fdnext) close(*fdnext);
+        if (fdprev) fd_close(*fdprev);
+        if (fdnext) fd_close(*fdnext);
     }
 
     for (size_t i = 0; i < chain.cmd_lines.count; ++i) {
