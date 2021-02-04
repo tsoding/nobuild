@@ -1,7 +1,7 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nobuild2.h"
 
-#define CFLAGS "-Wall", "-Wextra", "-std=c11", "-pedantic"
+#define CFLAGS "-Wall", "-Wextra", "-std=c99", "-pedantic"
 
 void build_tool(const char *tool)
 {
@@ -47,8 +47,8 @@ void print_chain(const Chain *chain)
 {
     INFO("input: %s", chain->input_filepath);
     INFO("output: %s", chain->output_filepath);
-    FOREACH_ARRAY(Cmd_Line, cmd_line, chain->cmd_lines, {
-        INFO("cmd: %s", cmd_line_show(*cmd_line));
+    FOREACH_ARRAY(Cmd, cmd, chain->cmds, {
+        INFO("cmd: %s", cmd_show(*cmd));
     });
 }
 

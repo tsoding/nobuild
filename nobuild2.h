@@ -121,26 +121,26 @@ Pipe pipe_make(void);
 
 typedef struct {
     Cstr_Array line;
-} Cmd_Line;
-
-#define CMD_LINE(...) ((Cmd_Line) { .line = cstr_array_make(__VA_ARGS__, NULL) })
+} Cmd;
 
 void fd_close(Fd fd);
 void pid_wait(Pid pid);
-Cstr cmd_line_show(Cmd_Line cmd_line);
-Pid cmd_line_run_async(Cmd_Line cmd_line, Fd *fdin, Fd *fdout);
-void cmd_line_run_sync(Cmd_Line cmd_line);
+Cstr cmd_show(Cmd cmd);
+Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout);
+void cmd_run_sync(Cmd cmd);
 
 typedef struct {
-    Cmd_Line *elems;
+    Cmd *elems;
     size_t count;
-} Cmd_Line_Array;
+} Cmd_Array;
 
-#define CMD(...)                                    \
-    do {                                            \
-        Cmd_Line cmd_line = CMD_LINE(__VA_ARGS__);  \
-        INFO("CMD: %s", cmd_line_show(cmd_line));   \
-        cmd_line_run_sync(cmd_line);                \
+#define CMD(...)                                        \
+    do {                                                \
+        Cmd cmd = {                                     \
+            .line = cstr_array_make(__VA_ARGS__, NULL)  \
+        };                                              \
+        INFO("CMD: %s", cmd_show(cmd));                 \
+        cmd_run_sync(cmd);                              \
     } while (0)
 
 typedef enum {
@@ -176,7 +176,7 @@ typedef struct {
 
 typedef struct {
     Cstr input_filepath;
-    Cmd_Line_Array cmd_lines;
+    Cmd_Array cmds;
     Cstr output_filepath;
 } Chain;
 
@@ -499,29 +499,29 @@ void pid_wait(Pid pid)
 #endif // _WIN32
 }
 
-Cstr cmd_line_show(Cmd_Line cmd_line)
+Cstr cmd_show(Cmd cmd)
 {
-    // TODO: cmd_line_show does not render the command line properly
+    // TODO: cmd_show does not render the command line properly
     // - No string literals when arguments contains space
     // - No escaping of special characters
     // - Etc.
-    return cstr_array_join(" ", cmd_line.line);
+    return cstr_array_join(" ", cmd.line);
 }
 
-Pid cmd_line_run_async(Cmd_Line cmd_line, Fd *fdin, Fd *fdout)
+Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
 #ifdef _WIN32
-    PANIC("TODO: cmd_line_run_sync is not implemented for WinAPI");
+    PANIC("TODO: cmd_run_sync is not implemented for WinAPI");
     return 0;
 #else
     pid_t cpid = fork();
     if (cpid < 0) {
         PANIC("Could not fork child process: %s: %s",
-              cmd_line_show(cmd_line), strerror(errno));
+              cmd_show(cmd), strerror(errno));
     }
 
     if (cpid == 0) {
-        Cstr_Array args = cstr_array_append(cmd_line.line, NULL);
+        Cstr_Array args = cstr_array_append(cmd.line, NULL);
 
         if (fdin) {
             if (dup2(*fdin, STDIN_FILENO) < 0) {
@@ -537,7 +537,7 @@ Pid cmd_line_run_async(Cmd_Line cmd_line, Fd *fdin, Fd *fdout)
 
         if (execvp(args.elems[0], (char * const*) args.elems) < 0) {
             PANIC("Could not exec child process: %s: %s",
-                  cmd_line_show(cmd_line), strerror(errno));
+                  cmd_show(cmd), strerror(errno));
         }
     }
 
@@ -545,12 +545,12 @@ Pid cmd_line_run_async(Cmd_Line cmd_line, Fd *fdin, Fd *fdout)
 #endif // _WIN32
 }
 
-void cmd_line_run_sync(Cmd_Line cmd_line)
+void cmd_run_sync(Cmd cmd)
 {
 #ifndef _WIN32
-    pid_wait(cmd_line_run_async(cmd_line, NULL, NULL));
+    pid_wait(cmd_run_async(cmd, NULL, NULL));
 #else
-    Cstr_Array args = cstr_array_append(cmd_line.line, NULL);
+    Cstr_Array args = cstr_array_append(cmd.line, NULL);
     intptr_t status = _spawnvp(_P_WAIT, args.elems[0], (char * const*) args.elems);
     if (status < 0) {
         PANIC("could not start child process: %s", strerror(errno));
@@ -566,7 +566,7 @@ static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token
 {
     switch (token.type) {
     case CHAIN_TOKEN_CMD: {
-        chain->cmd_lines.count += 1;
+        chain->cmds.count += 1;
     } break;
 
     case CHAIN_TOKEN_IN: {
@@ -593,10 +593,10 @@ static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token
     }
 }
 
-static void chain_push_cmd_line(Chain *chain, Chain_Token token)
+static void chain_push_cmd(Chain *chain, Chain_Token token)
 {
     if (token.type == CHAIN_TOKEN_CMD) {
-        chain->cmd_lines.elems[chain->cmd_lines.count++] = (Cmd_Line) {
+        chain->cmds.elems[chain->cmds.count++] = (Cmd) {
             .line = token.args
         };
     }
@@ -616,18 +616,18 @@ Chain chain_build_from_tokens(Chain_Token first, ...)
     }
     va_end(args);
 
-    result.cmd_lines.elems = malloc(sizeof(result.cmd_lines.elems[0]) * result.cmd_lines.count);
-    if (result.cmd_lines.elems == NULL) {
+    result.cmds.elems = malloc(sizeof(result.cmds.elems[0]) * result.cmds.count);
+    if (result.cmds.elems == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
-    result.cmd_lines.count = 0;
+    result.cmds.count = 0;
 
-    chain_push_cmd_line(&result, first);
+    chain_push_cmd(&result, first);
 
     va_start(args, first);
     next = va_arg(args, Chain_Token);
     while (next.type != CHAIN_TOKEN_END) {
-        chain_push_cmd_line(&result, next);
+        chain_push_cmd(&result, next);
         next = va_arg(args, Chain_Token);
     }
     va_end(args);
@@ -640,11 +640,11 @@ void chain_run_sync(Chain chain)
 #ifdef _WIN32
     PANIC("chain_run_sync is not implemented for WinAPI");
 #else
-    if (chain.cmd_lines.count == 0) {
+    if (chain.cmds.count == 0) {
         return;
     }
 
-    Pid *cpids = malloc(sizeof(pid_t) * chain.cmd_lines.count);
+    Pid *cpids = malloc(sizeof(pid_t) * chain.cmds.count);
 
     Pipe pip = {0};
     Fd fdin = 0;
@@ -658,11 +658,11 @@ void chain_run_sync(Chain chain)
         fdprev = &fdin;
     }
 
-    for (size_t i = 0; i < chain.cmd_lines.count - 1; ++i) {
+    for (size_t i = 0; i < chain.cmds.count - 1; ++i) {
         pip = pipe_make();
 
-        cpids[i] = cmd_line_run_async(
-            chain.cmd_lines.elems[i],
+        cpids[i] = cmd_run_async(
+            chain.cmds.elems[i],
             fdprev,
             &pip.write);
 
@@ -688,10 +688,10 @@ void chain_run_sync(Chain chain)
             fdnext = &fdout;
         }
 
-        const size_t last = chain.cmd_lines.count - 1;
+        const size_t last = chain.cmds.count - 1;
         cpids[last] =
-            cmd_line_run_async(
-                chain.cmd_lines.elems[last],
+            cmd_run_async(
+                chain.cmds.elems[last],
                 fdprev,
                 fdnext);
 
@@ -699,7 +699,7 @@ void chain_run_sync(Chain chain)
         if (fdnext) fd_close(*fdnext);
     }
 
-    for (size_t i = 0; i < chain.cmd_lines.count; ++i) {
+    for (size_t i = 0; i < chain.cmds.count; ++i) {
         pid_wait(cpids[i]);
     }
 #endif // _WIN32
@@ -712,8 +712,8 @@ void chain_echo(Chain chain)
         printf(" %s", chain.input_filepath);
     }
 
-    FOREACH_ARRAY(Cmd_Line, cmd_line, chain.cmd_lines, {
-        printf(" |> %s", cmd_line_show(*cmd_line));
+    FOREACH_ARRAY(Cmd, cmd, chain.cmds, {
+        printf(" |> %s", cmd_show(*cmd));
     });
 
     if (chain.output_filepath) {
