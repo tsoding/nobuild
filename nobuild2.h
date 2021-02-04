@@ -707,7 +707,7 @@ void chain_run_sync(Chain chain)
 
 void chain_echo(Chain chain)
 {
-    printf("[INFO]");
+    printf("[INFO] CHAIN:");
     if (chain.input_filepath) {
         printf(" %s", chain.input_filepath);
     }
