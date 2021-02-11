@@ -122,6 +122,8 @@ typedef struct {
     Cstr_Array line;
 } Cmd;
 
+Fd fd_open_for_read(Cstr path);
+Fd fd_open_for_write(Cstr path);
 void fd_close(Fd fd);
 void pid_wait(Pid pid);
 Cstr cmd_show(Cmd cmd);
@@ -458,6 +460,38 @@ Pipe pipe_make(void)
     return pip;
 }
 
+Fd fd_open_for_read(Cstr path)
+{
+#ifndef _WIN32
+    Fd result = open(path, O_RDONLY);
+    if (result < 0) {
+        PANIC("Could not open file %s: %s", path, strerror(errno));
+    }
+    return result;
+#else
+    (void) path;
+    PANIC("fd_open_for_read is not implemented for Windows");
+    return 0;
+#endif // _WIN32
+}
+
+Fd fd_open_for_write(Cstr path)
+{
+#ifndef _WIN32
+    Fd result = open(path,
+                     O_WRONLY | O_CREAT | O_TRUNC,
+                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (result < 0) {
+        PANIC("could not open file %s: %s", path, strerror(errno));
+    }
+    return result;
+#else
+    (void) path;
+    PANIC("fd_open_for_write is not implemented for Windows");
+    return 0;
+#endif // _WIN32
+}
+
 void fd_close(Fd fd)
 {
 #ifdef _WIN32
@@ -640,14 +674,14 @@ void chain_run_sync(Chain chain)
         return;
     }
 
-    Pid *cpids = malloc(sizeof(pid_t) * chain.cmds.count);
+    Pid *cpids = malloc(sizeof(Pid) * chain.cmds.count);
 
     Pipe pip = {0};
     Fd fdin = 0;
     Fd *fdprev = NULL;
 
     if (chain.input_filepath) {
-        fdin = open(chain.input_filepath, O_RDONLY);
+        fdin = fd_open_for_read(chain.input_filepath);//open(chain.input_filepath, O_RDONLY);
         if (fdin < 0) {
             PANIC("could not open file %s: %s", chain.input_filepath, strerror(errno));
         }
@@ -673,9 +707,7 @@ void chain_run_sync(Chain chain)
         Fd *fdnext = NULL;
 
         if (chain.output_filepath) {
-            fdout = open(chain.output_filepath,
-                         O_WRONLY | O_CREAT | O_TRUNC,
-                         S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            fdout = fd_open_for_write(chain.output_filepath); //open(chain.output_filepath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
             if (fdout < 0) {
                 PANIC("could not open file %s: %s",
                       chain.output_filepath,
