@@ -10,67 +10,66 @@
 #    include <dirent.h>
 #    include <fcntl.h>
 #    define PATH_SEP "/"
-     typedef pid_t Pid;
-     typedef int Fd;
+typedef pid_t Pid;
+typedef int Fd;
 #else
 #    define WIN32_MEAN_AND_LEAN
 #    include "windows.h"
 #    include <process.h>
 #    define PATH_SEP "\\"
-     typedef HANDLE Pid;
-     typedef HANDLE Fd;
+typedef HANDLE Pid;
+typedef HANDLE Fd;
 // minirent.h HEADER BEGIN ////////////////////////////////////////
-    // Copyright 2021 Alexey Kutepov <reximkut@gmail.com>
-    //
-    // Permission is hereby granted, free of charge, to any person obtaining
-    // a copy of this software and associated documentation files (the
-    // "Software"), to deal in the Software without restriction, including
-    // without limitation the rights to use, copy, modify, merge, publish,
-    // distribute, sublicense, and/or sell copies of the Software, and to
-    // permit persons to whom the Software is furnished to do so, subject to
-    // the following conditions:
-    //
-    // The above copyright notice and this permission notice shall be
-    // included in all copies or substantial portions of the Software.
-    //
-    // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-    // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-    // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-    // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-    // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-    // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-    //
-    // ============================================================
-    //
-    // minirent — 0.0.1 — A subset of dirent interface for Windows.
-    //
-    // https://github.com/tsoding/minirent
-    //
-    // ============================================================
-    //
-    // ChangeLog (https://semver.org/ is implied)
-    //
-    //    0.0.1 First Official Release
+// Copyright 2021 Alexey Kutepov <reximkut@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+// ============================================================
+//
+// minirent — 0.0.1 — A subset of dirent interface for Windows.
+//
+// https://github.com/tsoding/minirent
+//
+// ============================================================
+//
+// ChangeLog (https://semver.org/ is implied)
+//
+//    0.0.1 First Official Release
 
-    #ifndef MINIRENT_H_
-    #define MINIRENT_H_
+#ifndef MINIRENT_H_
+#define MINIRENT_H_
 
-    #define WIN32_LEAN_AND_MEAN
-    #include "windows.h"
+#define WIN32_LEAN_AND_MEAN
+#include "windows.h"
 
-    struct dirent
-    {
-        char d_name[MAX_PATH+1];
-    };
+struct dirent {
+    char d_name[MAX_PATH+1];
+};
 
-    typedef struct DIR DIR;
+typedef struct DIR DIR;
 
-    DIR *opendir(const char *dirpath);
-    struct dirent *readdir(DIR *dirp);
-    int closedir(DIR *dirp);
+DIR *opendir(const char *dirpath);
+struct dirent *readdir(DIR *dirp);
+int closedir(DIR *dirp);
 
-    #endif  // MINIRENT_H_
+#endif  // MINIRENT_H_
 // minirent.h HEADER END ////////////////////////////////////////
 
 #endif  // _WIN32
@@ -245,80 +244,79 @@ void PANIC(Cstr fmt, ...);
 
 #ifdef _WIN32
 // minirent.h IMPLEMENTATION BEGIN ////////////////////////////////////////
-    struct DIR
-    {
-        HANDLE hFind;
-        WIN32_FIND_DATA data;
-        struct dirent *dirent;
-    };
+struct DIR {
+    HANDLE hFind;
+    WIN32_FIND_DATA data;
+    struct dirent *dirent;
+};
 
-    DIR *opendir(const char *dirpath)
-    {
-        assert(dirpath);
+DIR *opendir(const char *dirpath)
+{
+    assert(dirpath);
 
-        char buffer[MAX_PATH];
-        snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
+    char buffer[MAX_PATH];
+    snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
 
-        DIR *dir = (DIR*)calloc(1, sizeof(DIR));
+    DIR *dir = (DIR*)calloc(1, sizeof(DIR));
 
-        dir->hFind = FindFirstFile(buffer, &dir->data);
-        if (dir->hFind == INVALID_HANDLE_VALUE) {
-            errno = ENOSYS;
-            goto fail;
-        }
-
-        return dir;
-
-    fail:
-        if (dir) {
-            free(dir);
-        }
-
-        return NULL;
+    dir->hFind = FindFirstFile(buffer, &dir->data);
+    if (dir->hFind == INVALID_HANDLE_VALUE) {
+        errno = ENOSYS;
+        goto fail;
     }
 
-    struct dirent *readdir(DIR *dirp)
-    {
-        assert(dirp);
+    return dir;
 
-        if (dirp->dirent == NULL) {
-            dirp->dirent = (struct dirent*)calloc(1, sizeof(struct dirent));
-        } else {
-            if(!FindNextFile(dirp->hFind, &dirp->data)) {
-                if (GetLastError() != ERROR_NO_MORE_FILES) {
-                    errno = ENOSYS;
-                }
+fail:
+    if (dir) {
+        free(dir);
+    }
 
-                return NULL;
+    return NULL;
+}
+
+struct dirent *readdir(DIR *dirp)
+{
+    assert(dirp);
+
+    if (dirp->dirent == NULL) {
+        dirp->dirent = (struct dirent*)calloc(1, sizeof(struct dirent));
+    } else {
+        if(!FindNextFile(dirp->hFind, &dirp->data)) {
+            if (GetLastError() != ERROR_NO_MORE_FILES) {
+                errno = ENOSYS;
             }
+
+            return NULL;
         }
-
-        memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
-
-        strncpy(
-            dirp->dirent->d_name,
-            dirp->data.cFileName,
-            sizeof(dirp->dirent->d_name) - 1);
-
-        return dirp->dirent;
     }
 
-    int closedir(DIR *dirp)
-    {
-        assert(dirp);
+    memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
 
-        if(!FindClose(dirp->hFind)) {
-            errno = ENOSYS;
-            return -1;
-        }
+    strncpy(
+        dirp->dirent->d_name,
+        dirp->data.cFileName,
+        sizeof(dirp->dirent->d_name) - 1);
 
-        if (dirp->dirent) {
-            free(dirp->dirent);
-        }
-        free(dirp);
+    return dirp->dirent;
+}
 
-        return 0;
+int closedir(DIR *dirp)
+{
+    assert(dirp);
+
+    if(!FindClose(dirp->hFind)) {
+        errno = ENOSYS;
+        return -1;
     }
+
+    if (dirp->dirent) {
+        free(dirp->dirent);
+    }
+    free(dirp);
+
+    return 0;
+}
 // minirent.h IMPLEMENTATION END ////////////////////////////////////////
 #endif // _WIN32
 
@@ -338,7 +336,7 @@ int cstr_ends_with(Cstr cstr, Cstr postfix)
     const size_t cstr_len = strlen(cstr);
     const size_t postfix_len = strlen(postfix);
     return postfix_len <= cstr_len
-        && strcmp(cstr + cstr_len - postfix_len, postfix) == 0;
+           && strcmp(cstr + cstr_len - postfix_len, postfix) == 0;
 }
 
 Cstr cstr_no_ext(Cstr path)
@@ -372,9 +370,8 @@ Cstr_Array cstr_array_make(Cstr first, ...)
     va_list args;
     va_start(args, first);
     for (Cstr next = va_arg(args, Cstr);
-         next != NULL;
-         next = va_arg(args, Cstr))
-    {
+            next != NULL;
+            next = va_arg(args, Cstr)) {
         result.count += 1;
     }
     va_end(args);
@@ -389,9 +386,8 @@ Cstr_Array cstr_array_make(Cstr first, ...)
 
     va_start(args, first);
     for (Cstr next = va_arg(args, Cstr);
-         next != NULL;
-         next = va_arg(args, Cstr))
-    {
+            next != NULL;
+            next = va_arg(args, Cstr)) {
         result.elems[result.count++] = next;
     }
     va_end(args);
@@ -567,7 +563,8 @@ static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token
     switch (token.type) {
     case CHAIN_TOKEN_CMD: {
         chain->cmds.count += 1;
-    } break;
+    }
+    break;
 
     case CHAIN_TOKEN_IN: {
         if (chain->input_filepath) {
@@ -575,7 +572,8 @@ static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token
         }
 
         chain->input_filepath = token.args.elems[0];
-    } break;
+    }
+    break;
 
     case CHAIN_TOKEN_OUT: {
         if (chain->output_filepath) {
@@ -583,7 +581,8 @@ static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token
         }
 
         chain->output_filepath = token.args.elems[0];
-    } break;
+    }
+    break;
 
     case CHAIN_TOKEN_END:
     default: {
@@ -662,9 +661,9 @@ void chain_run_sync(Chain chain)
         pip = pipe_make();
 
         cpids[i] = cmd_run_async(
-            chain.cmds.elems[i],
-            fdprev,
-            &pip.write);
+                       chain.cmds.elems[i],
+                       fdprev,
+                       &pip.write);
 
         if (fdprev) fd_close(*fdprev);
         fd_close(pip.write);
@@ -789,7 +788,8 @@ void path_rm(Cstr path)
 {
     if (IS_DIR(path)) {
         FOREACH_FILE_IN_DIR(file, path, {
-            if (strcmp(file, ".") != 0 && strcmp(file, "..") != 0) {
+            if (strcmp(file, ".") != 0 && strcmp(file, "..") != 0)
+            {
                 path_rm(PATH(path, file));
             }
         });
