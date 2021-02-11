@@ -636,9 +636,6 @@ Chain chain_build_from_tokens(Chain_Token first, ...)
 
 void chain_run_sync(Chain chain)
 {
-#ifdef _WIN32
-    PANIC("chain_run_sync is not implemented for WinAPI");
-#else
     if (chain.cmds.count == 0) {
         return;
     }
@@ -701,7 +698,6 @@ void chain_run_sync(Chain chain)
     for (size_t i = 0; i < chain.cmds.count; ++i) {
         pid_wait(cpids[i]);
     }
-#endif // _WIN32
 }
 
 void chain_echo(Chain chain)
