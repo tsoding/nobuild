@@ -560,7 +560,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     siStartInfo.cb = sizeof(STARTUPINFO);
     // NOTE: theoretically setting NULL to std handles should not be a problem
     // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
-    siStartInfo.hStdHandle = NULL;
+    siStartInfo.hStdError = NULL;
     siStartInfo.hStdOutput = fdout ? *fdout : NULL;
     siStartInfo.hStdInput = fdin ? *fdin : NULL;
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
