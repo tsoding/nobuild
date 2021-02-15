@@ -550,6 +550,31 @@ Cstr cmd_show(Cmd cmd)
     return cstr_array_join(" ", cmd.line);
 }
 
+#ifdef _WIN32
+LPSTR GetLastErrorAsString(void)
+{
+    // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
+
+    DWORD errorMessageId = GetLastError();
+    assert(errorMessageId != 0);
+
+    LPSTR messageBuffer = NULL;
+
+    DWORD size =
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROMSYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
+            NULL, // LPCVOID lpSource,
+            errorMessageId, // DWORD   dwMessageId,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
+            (LPSTR) &messageBuffer, // LPTSTR  lpBuffer,
+            0, // DWORD   nSize,
+            NULL // va_list *Arguments
+        );
+
+    return messageBuffer;
+}
+#endif // _WIN32
+
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
 #ifdef _WIN32
@@ -585,7 +610,8 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
         );
 
     if (!bSuccess) {
-        PANIC("Could not create child process %s", cmd_show(cmd));
+        PANIC("Could not create child process %s: %s\n",
+              cmd_show(cmd), GetLastErrorAsString());
     }
 
     CloseHandle(piProcInfo.hThread);
