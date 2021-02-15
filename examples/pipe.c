@@ -7,6 +7,7 @@ int main(void)
           CHAIN_CMD(PATH("tools", "rot13")),
           CHAIN_CMD(PATH("tools", "hex")),
           OUT("output.txt"));
+    CMD(PATH("tools", "cat"), "output.txt");
 
     return 0;
 }
