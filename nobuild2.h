@@ -551,6 +551,7 @@ Cstr cmd_show(Cmd cmd)
 }
 
 #ifdef _WIN32
+// TODO: use GetLastErrorAsString everywhere on Windows error reporting
 LPSTR GetLastErrorAsString(void)
 {
     // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
@@ -594,7 +595,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
     BOOL bSuccess =
-        CreateProcessW(
+        CreateProcess(
             NULL,
             // TODO: cmd_run_async on Windows does not render command line properly
             // It may require wrapping some arguments with double-quotes if they contains spaces, etc.
