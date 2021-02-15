@@ -72,6 +72,30 @@ int closedir(DIR *dirp);
 #endif  // MINIRENT_H_
 // minirent.h HEADER END ////////////////////////////////////////
 
+// TODO: use GetLastErrorAsString everywhere on Windows error reporting
+LPSTR GetLastErrorAsString(void)
+{
+    // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
+
+    DWORD errorMessageId = GetLastError();
+    assert(errorMessageId != 0);
+
+    LPSTR messageBuffer = NULL;
+
+    DWORD size =
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
+            NULL, // LPCVOID lpSource,
+            errorMessageId, // DWORD   dwMessageId,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
+            (LPSTR) &messageBuffer, // LPTSTR  lpBuffer,
+            0, // DWORD   nSize,
+            NULL // va_list *Arguments
+        );
+
+    return messageBuffer;
+}
+
 #endif  // _WIN32
 
 #include <assert.h>
@@ -516,7 +540,15 @@ void fd_close(Fd fd)
 void pid_wait(Pid pid)
 {
 #ifdef _WIN32
-    PANIC("TODO: pid_wait is not implemented for WinAPI");
+    DWORD result = WaitForSingleObject(
+                       pid, // HANDLE hHandle,
+                       INFINITE// DWORD  dwMilliseconds
+                   );
+
+    if (result == WAIT_FAILED) {
+        PANIC("could not wait on child process: %s", GetLastErrorAsString());
+    }
+
 #else
     for (;;) {
         int wstatus = 0;
@@ -549,32 +581,6 @@ Cstr cmd_show(Cmd cmd)
     // - Etc.
     return cstr_array_join(" ", cmd.line);
 }
-
-#ifdef _WIN32
-// TODO: use GetLastErrorAsString everywhere on Windows error reporting
-LPSTR GetLastErrorAsString(void)
-{
-    // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
-
-    DWORD errorMessageId = GetLastError();
-    assert(errorMessageId != 0);
-
-    LPSTR messageBuffer = NULL;
-
-    DWORD size =
-        FormatMessage(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
-            NULL, // LPCVOID lpSource,
-            errorMessageId, // DWORD   dwMessageId,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
-            (LPSTR) &messageBuffer, // LPTSTR  lpBuffer,
-            0, // DWORD   nSize,
-            NULL // va_list *Arguments
-        );
-
-    return messageBuffer;
-}
-#endif // _WIN32
 
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
