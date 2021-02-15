@@ -480,7 +480,7 @@ Fd fd_open_for_read(Cstr path)
                     NULL);
 
     if (result == INVALID_HANDLE_VALUE) {
-       PANIC("Could not open file %s", path);
+        PANIC("Could not open file %s", path);
     }
 
     return result;
@@ -553,8 +553,44 @@ Cstr cmd_show(Cmd cmd)
 Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 {
 #ifdef _WIN32
-    PANIC("TODO: cmd_run_sync is not implemented for WinAPI");
-    return 0;
+    // https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
+
+    STARTUPINFO siStartInfo;
+    ZeroMemory(&siStartInfo, sizeof(siStartInfo));
+    siStartInfo.cb = sizeof(STARTUPINFO);
+    // NOTE: theoretically setting NULL to std handles should not be a problem
+    // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
+    siStartInfo.hStdHandle = NULL;
+    siStartInfo.hStdOutput = fdout ? *fdout : NULL;
+    siStartInfo.hStdInput = fdin ? *fdin : NULL;
+    siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+    PROCESS_INFORMATION piProcInfo;
+    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+
+    BOOL bSuccess =
+        CreateProcessW(
+            NULL,
+            // TODO: cmd_run_async on Windows does not render command line properly
+            // It may require wrapping some arguments with double-quotes if they contains spaces, etc.
+            JOIN(" ", cmd.line),
+            NULL,
+            NULL,
+            TRUE,
+            0,
+            NULL,
+            NULL,
+            &siStartInfo,
+            &piProcInfo
+        );
+
+    if (!bSuccess) {
+        PANIC("Could not create child process %s", cmd_show(cmd));
+    }
+
+    CloseHandle(piProcInfo.hThread);
+
+    return piProcInfo.hProcess;
 #else
     pid_t cpid = fork();
     if (cpid < 0) {
