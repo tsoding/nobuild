@@ -589,19 +589,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
 
 void cmd_run_sync(Cmd cmd)
 {
-#ifndef _WIN32
     pid_wait(cmd_run_async(cmd, NULL, NULL));
-#else
-    Cstr_Array args = cstr_array_append(cmd.line, NULL);
-    intptr_t status = _spawnvp(_P_WAIT, args.elems[0], (char * const*) args.elems);
-    if (status < 0) {
-        PANIC("could not start child process: %s", strerror(errno));
-    }
-
-    if (status > 0) {
-        PANIC("command exited with exit code %d", status);
-    }
-#endif  // _WIN32
 }
 
 static void chain_set_input_output_files_or_count_cmds(Chain *chain, Chain_Token token)
