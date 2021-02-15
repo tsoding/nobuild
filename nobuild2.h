@@ -524,9 +524,21 @@ Fd fd_open_for_write(Cstr path)
     }
     return result;
 #else
-    (void) path;
-    PANIC("fd_open_for_write is not implemented for Windows");
-    return 0;
+    Fd result = CreateFile(
+                    path,                // name of the write
+                    GENERIC_WRITE,          // open for writing
+                    0,                      // do not share
+                    NULL,                   // default security
+                    CREATE_NEW,             // create new file only
+                    FILE_ATTRIBUTE_NORMAL,  // normal file
+                    NULL                  // no attr. template
+                );
+
+    if (result == INVALID_HANDLE_VALUE) {
+        PANIC("Could not open file %s: %s", path, GetLastErrorAsString());
+    }
+
+    return result;
 #endif // _WIN32
 }
 
