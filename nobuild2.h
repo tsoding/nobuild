@@ -765,7 +765,7 @@ void chain_run_sync(Chain chain)
     Fd *fdprev = NULL;
 
     if (chain.input_filepath) {
-        fdin = fd_open_for_read(chain.input_filepath);//open(chain.input_filepath, O_RDONLY);
+        fdin = fd_open_for_read(chain.input_filepath);
         if (fdin < 0) {
             PANIC("could not open file %s: %s", chain.input_filepath, strerror(errno));
         }
@@ -791,7 +791,7 @@ void chain_run_sync(Chain chain)
         Fd *fdnext = NULL;
 
         if (chain.output_filepath) {
-            fdout = fd_open_for_write(chain.output_filepath); //open(chain.output_filepath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            fdout = fd_open_for_write(chain.output_filepath);
             if (fdout < 0) {
                 PANIC("could not open file %s: %s",
                       chain.output_filepath,
