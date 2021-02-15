@@ -469,9 +469,21 @@ Fd fd_open_for_read(Cstr path)
     }
     return result;
 #else
-    (void) path;
-    PANIC("fd_open_for_read is not implemented for Windows");
-    return 0;
+    // https://docs.microsoft.com/en-us/windows/win32/fileio/opening-a-file-for-reading-or-writing
+    Fd result = CreateFile(
+                    path,
+                    GENERIC_READ,
+                    FILE_SHARE_READ,
+                    NULL,
+                    OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                    NULL);
+
+    if (result == INVALID_HANDLE_VALUE) {
+       PANIC("Could not open file %s", path);
+    }
+
+    return result;
 #endif // _WIN32
 }
 
