@@ -73,28 +73,7 @@ int closedir(DIR *dirp);
 // minirent.h HEADER END ////////////////////////////////////////
 
 // TODO: use GetLastErrorAsString everywhere on Windows error reporting
-LPSTR GetLastErrorAsString(void)
-{
-    // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
-
-    DWORD errorMessageId = GetLastError();
-    assert(errorMessageId != 0);
-
-    LPSTR messageBuffer = NULL;
-
-    DWORD size =
-        FormatMessage(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
-            NULL, // LPCVOID lpSource,
-            errorMessageId, // DWORD   dwMessageId,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
-            (LPSTR) &messageBuffer, // LPTSTR  lpBuffer,
-            0, // DWORD   nSize,
-            NULL // va_list *Arguments
-        );
-
-    return messageBuffer;
-}
+LPSTR GetLastErrorAsString(void);
 
 #endif  // _WIN32
 
@@ -269,6 +248,29 @@ void PANIC(Cstr fmt, ...);
 #ifdef NOBUILD_IMPLEMENTATION
 
 #ifdef _WIN32
+LPSTR GetLastErrorAsString(void)
+{
+    // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
+
+    DWORD errorMessageId = GetLastError();
+    assert(errorMessageId != 0);
+
+    LPSTR messageBuffer = NULL;
+
+    DWORD size =
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, // DWORD   dwFlags,
+            NULL, // LPCVOID lpSource,
+            errorMessageId, // DWORD   dwMessageId,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
+            (LPSTR) &messageBuffer, // LPTSTR  lpBuffer,
+            0, // DWORD   nSize,
+            NULL // va_list *Arguments
+        );
+
+    return messageBuffer;
+}
+
 // minirent.h IMPLEMENTATION BEGIN ////////////////////////////////////////
 struct DIR {
     HANDLE hFind;
