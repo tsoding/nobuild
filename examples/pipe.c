@@ -3,13 +3,11 @@
 
 int main(void)
 {
-    // CHAIN(IN(PATH("examples", "pipe.c")),
-    //       CHAIN_CMD(PATH("tools", "rot13")),
-    //       CHAIN_CMD(PATH("tools", "hex")),
-    //       OUT("output.txt"));
-    // CMD(PATH("tools", "cat"), "output.txt");
-
-    CMD(PATH("tools", "cat"), __FILE__);
+    CHAIN(IN(PATH("examples", "pipe.c")),
+          CHAIN_CMD(PATH("tools", "rot13")),
+          CHAIN_CMD(PATH("tools", "hex")),
+          OUT("output.txt"));
+    CMD(PATH("tools", "cat"), "output.txt");
 
     return 0;
 }
