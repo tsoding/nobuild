@@ -471,7 +471,11 @@ Pipe pipe_make(void)
 
     if (!CreatePipe(&pip.read, &pip.write, &saAttr, 0)) {
         // TODO: WinAPI version of pipe_make does not provide enough details on failure
-        PANIC("Could not create pipe");
+        PANIC("Could not create pipe: %s", GetLastErrorAsString());
+    }
+    
+    if (!SetHandleInformation(pip.read, HANDLE_FLAG_INHERIT, 0)) {
+        PANIC("Could not create pipe: %s", GetLastErrorAsString());
     }
 #else
     Fd pipefd[2];
