@@ -500,11 +500,16 @@ Fd fd_open_for_read(Cstr path)
     return result;
 #else
     // https://docs.microsoft.com/en-us/windows/win32/fileio/opening-a-file-for-reading-or-writing
+    SECURITY_ATTRIBUTES saAttr = {0};
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
     Fd result = CreateFile(
                     path,
                     GENERIC_READ,
                     FILE_SHARE_READ,
-                    NULL,
+                    &saAttr,
                     OPEN_EXISTING,
                     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
                     NULL);
