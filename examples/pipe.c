@@ -8,7 +8,7 @@ int main(void)
           // CHAIN_CMD(PATH("tools", "hex")),
           // OUT("output.txt")
           );
-    CMD(PATH("tools", "cat"), "output.txt");
+    // CMD(PATH("tools", "cat"), "output.txt");
 
     // sleep(1);
 
