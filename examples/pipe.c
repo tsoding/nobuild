@@ -7,10 +7,14 @@ int main(void)
           CHAIN_CMD(PATH("tools", "rot13"))//,
           // CHAIN_CMD(PATH("tools", "hex")),
           // OUT("output.txt")
-          );
+         );
     // CMD(PATH("tools", "cat"), "output.txt");
 
-    // sleep(1);
+#ifdef _WIN32
+    Sleep(1000);
+#else
+    sleep(1);
+#endif
 
     return 0;
 }
