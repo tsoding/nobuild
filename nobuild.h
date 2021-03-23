@@ -162,6 +162,7 @@ typedef struct {
     Cstr_Array args;
 } Chain_Token;
 
+// TODO(#17): IN and OUT are already taken by WinAPI
 #define IN(path) \
     (Chain_Token) { \
         .type = CHAIN_TOKEN_IN, \
