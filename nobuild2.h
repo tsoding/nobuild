@@ -567,6 +567,7 @@ void pid_wait(Pid pid)
         PANIC("could not wait on child process: %s", GetLastErrorAsString());
     }
 
+    CloseHandle(pid);
 #else
     for (;;) {
         int wstatus = 0;
