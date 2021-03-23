@@ -981,4 +981,13 @@ void PANIC(Cstr fmt, ...)
     exit(1);
 }
 
+char *shift_args(int *argc, char ***argv)
+{
+    assert(*argc > 0);
+    char *result = **argv;
+    *argc -= 1;
+    *argv += 1;
+    return result;
+}
+
 #endif // NOBUILD_IMPLEMENTATION
