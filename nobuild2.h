@@ -531,11 +531,15 @@ Fd fd_open_for_write(Cstr path)
     }
     return result;
 #else
+    SECURITY_ATTRIBUTES saAttr = {0};
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+
     Fd result = CreateFile(
                     path,                // name of the write
                     GENERIC_WRITE,          // open for writing
                     0,                      // do not share
-                    NULL,                   // default security
+                    &saAttr,                   // default security
                     CREATE_NEW,             // create new file only
                     FILE_ATTRIBUTE_NORMAL,  // normal file
                     NULL                  // no attr. template
