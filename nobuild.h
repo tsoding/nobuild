@@ -192,6 +192,7 @@ Chain chain_build_from_tokens(Chain_Token first, ...);
 void chain_run_sync(Chain chain);
 void chain_echo(Chain chain);
 
+// TODO(#15): PIPE does not report where exactly a syntactic error has happened
 #define CHAIN(...)                                                      \
     do {                                                                \
         Chain chain = chain_build_from_tokens(__VA_ARGS__, (Chain_Token) {0}); \
