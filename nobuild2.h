@@ -464,10 +464,9 @@ Pipe pipe_make(void)
 #ifdef _WIN32
     // https://docs.microsoft.com/en-us/windows/win32/ProcThread/creating-a-child-process-with-redirected-input-and-output
 
-    SECURITY_ATTRIBUTES saAttr;
+    SECURITY_ATTRIBUTES saAttr = {0};
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
 
     if (!CreatePipe(&pip.read, &pip.write, &saAttr, 0)) {
         // TODO: WinAPI version of pipe_make does not provide enough details on failure
@@ -503,15 +502,14 @@ Fd fd_open_for_read(Cstr path)
     SECURITY_ATTRIBUTES saAttr = {0};
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
 
     Fd result = CreateFile(
                     path,
                     GENERIC_READ,
-                    FILE_SHARE_READ,
+                    0,
                     &saAttr,
                     OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                    FILE_ATTRIBUTE_READONLY,
                     NULL);
 
     if (result == INVALID_HANDLE_VALUE) {
