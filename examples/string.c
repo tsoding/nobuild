@@ -1,5 +1,5 @@
 #define NOBUILD_IMPLEMENTATION
-#include "../nobuild2.h"
+#include "../nobuild.h"
 
 #define DEMO_S(expr)                         \
     INFO("    " #expr " == \"%s\"", expr)

@@ -1,5 +1,5 @@
 #define NOBUILD_IMPLEMENTATION
-#include "../nobuild2.h"
+#include "../nobuild.h"
 
 void foreach_file_in_dir(const char *dir_path)
 {

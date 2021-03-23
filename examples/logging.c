@@ -1,5 +1,5 @@
 #define NOBUILD_IMPLEMENTATION
-#include "../nobuild2.h"
+#include "../nobuild.h"
 
 int main(void)
 {
