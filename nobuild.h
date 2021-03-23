@@ -180,6 +180,7 @@ typedef struct {
         .args = cstr_array_make(__VA_ARGS__, NULL) \
     }
 
+// TODO(#20): pipes do not allow redirecting stderr
 typedef struct {
     Cstr input_filepath;
     Cmd_Array cmds;
