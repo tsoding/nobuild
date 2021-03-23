@@ -816,9 +816,9 @@ void chain_run_sync(Chain chain)
         if (fdnext) fd_close(*fdnext);
     }
 
-    for (size_t i = 0; i < chain.cmds.count; ++i) {
-        pid_wait(cpids[i]);
-    }
+    // for (size_t i = 0; i < chain.cmds.count; ++i) {
+    //     pid_wait(cpids[i]);
+    // }
 }
 
 void chain_echo(Chain chain)
