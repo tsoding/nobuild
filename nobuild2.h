@@ -473,9 +473,9 @@ Pipe pipe_make(void)
         PANIC("Could not create pipe: %s", GetLastErrorAsString());
     }
     
-    if (!SetHandleInformation(pip.read, HANDLE_FLAG_INHERIT, 0)) {
-        PANIC("Could not create pipe: %s", GetLastErrorAsString());
-    }
+    // if (!SetHandleInformation(pip.read, HANDLE_FLAG_INHERIT, 0)) {
+    //     PANIC("Could not create pipe: %s", GetLastErrorAsString());
+    // }
 #else
     Fd pipefd[2];
     if (pipe(pipefd) < 0) {
