@@ -3,13 +3,13 @@
 
 int main(void)
 {
-#if _WIN32
-    WARN("Piping is not implemented on Windows yet");
-#else
-    PIPE(IN(PATH("examples", "pipe.c")),
-         CHAIN(PATH("tools", "rot13")),
-         CHAIN(PATH("tools", "hex")));
-#endif
+    CHAIN(IN(PATH("examples", "pipe.c")),
+          CHAIN_CMD(PATH("tools", "rot13")),
+          CHAIN_CMD(PATH("tools", "hex")),
+          OUT("output.txt"));
+    INFO("------------------------------------------------------------");
+    CMD(PATH("tools", "cat"), "output.txt");
+    INFO("------------------------------------------------------------");
 
     return 0;
 }

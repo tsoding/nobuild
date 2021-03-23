@@ -1,58 +1,61 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nobuild.h"
 
-#define CFLAGS "-Wall", "-Wextra", "-std=c11", "-pedantic", "-ggdb"
-
-void check_example(const char *example)
-{
-    const char *example_path = PATH("examples", NOEXT(example));
-
-    INFO("===== %s =====", NOEXT(example));
-
-#ifdef _WIN32
-    CMD("cl.exe", "/Fe.\\examples\\", PATH("examples", example));
-    CMD(CONCAT(example_path, ".exe"));
-#else
-    const char *cc = getenv("CC");
-    if (cc == NULL) cc = "cc";
-
-    CMD(cc, CFLAGS, "-o", example_path, PATH("examples", example));
-    CMD(example_path);
-#endif // _WIN32
-}
-
-void check_examples(void)
-{
-    FOREACH_FILE_IN_DIR(example, "examples", {
-        if (ENDS_WITH(example, ".c")) {
-            check_example(example);
-        }
-    });
-}
+#define CFLAGS "-Wall", "-Wextra", "-std=c99", "-pedantic"
 
 void build_tool(const char *tool)
 {
-#ifdef _WIN32
-    CMD("cl.exe", "/Fe.\\tools\\", PATH("tools", CONCAT(tool, ".c")));
+    Cstr tool_path = PATH("tools", tool);
+#ifndef _WIN32
+    CMD("cc", CFLAGS, "-o", NOEXT(tool_path), tool_path);
 #else
-    const char *cc = getenv("CC");
-    if (cc == NULL) cc = "cc";
-    CMD(cc, "-o", PATH("tools", tool), PATH("tools", CONCAT(tool, ".c")));
-#endif // _WIN32
+    CMD("cl.exe", "/Fe.\\tools\\", tool_path);
+#endif
 }
 
 void build_tools(void)
 {
     FOREACH_FILE_IN_DIR(tool, "tools", {
         if (ENDS_WITH(tool, ".c")) {
-            build_tool(NOEXT(tool));
+            build_tool(tool);
         }
     });
 }
 
-int main(int argc, char *argv[])
+void run_example(const char *example)
+{
+    Cstr example_path = PATH("examples", example);
+#ifndef _WIN32
+    CMD("cc", CFLAGS, "-o", NOEXT(example_path), example_path);
+#else
+    CMD("cl.exe", "/Fe.\\examples\\", example_path);
+#endif
+    CMD(NOEXT(example_path));
+}
+
+void run_examples(void)
+{
+    FOREACH_FILE_IN_DIR(example, "examples", {
+        if (ENDS_WITH(example, ".c")) {
+            run_example(example);
+        }
+    });
+}
+
+
+void print_chain(const Chain *chain)
+{
+    INFO("input: %s", chain->input_filepath);
+    INFO("output: %s", chain->output_filepath);
+    FOREACH_ARRAY(Cmd, cmd, chain->cmds, {
+        INFO("cmd: %s", cmd_show(*cmd));
+    });
+}
+
+int main(void)
 {
     build_tools();
-    check_examples();
+    run_examples();
+
     return 0;
 }
