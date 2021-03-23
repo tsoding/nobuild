@@ -11,11 +11,5 @@ int main(void)
     CMD(PATH("tools", "cat"), "output.txt");
     INFO("------------------------------------------------------------");
 
-#ifdef _WIN32
-    Sleep(1000);
-#else
-    sleep(1);
-#endif
-
     return 0;
 }
