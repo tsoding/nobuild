@@ -138,6 +138,7 @@ typedef struct {
     size_t count;
 } Cmd_Array;
 
+// TODO(#1): no way to disable echo in nobuild scripts
 #define CMD(...)                                        \
     do {                                                \
         Cmd cmd = {                                     \
