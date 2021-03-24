@@ -23,7 +23,7 @@ Right now I'm actively using nobuild only in [bm](https://github.com/tsoding/bm)
 
 ## It's likely Not Suitable for Your Project
 
-If you are use [cmake](https://cmake.org/) with tons of modules to manage and find tons of dependencies you probably don't want to use this tool. nobuild is more like writting shell scripts but in C.
+If you are using [cmake](https://cmake.org/) with tons of modules to manage and find tons of dependencies you probably don't want to use this tool. nobuild is more like writting shell scripts but in C.
 
 ## Advantages of nobuild
 
