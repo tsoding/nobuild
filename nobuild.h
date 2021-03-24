@@ -246,6 +246,8 @@ void WARN(Cstr fmt, ...);
 void ERRO(Cstr fmt, ...);
 void PANIC(Cstr fmt, ...);
 
+char *shift_args(int *argc, char ***argv);
+
 #endif  // NOBUILD_H_
 
 ////////////////////////////////////////////////////////////////////////////////
