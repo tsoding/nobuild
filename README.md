@@ -15,6 +15,12 @@ $ ./nobuild
 
 Explore [nobuild.c](./nobuild.c) file and the [examples](./examples) folder to learn more.
 
+## This is an Experimental Project
+
+I'm not sure if this is even a good idea myself. This is why I'm implementing it. This is a research project. I'm not making any claims about suitability of this approach to any project.
+
+Right now I'm actively using nobuild only in [bm](https://github.com/tsoding/bm).
+
 ## How to use the library in your own project
 
 Keep in mind that [nobuild.h](./nobuild.h) is an [stb-style](https://github.com/nothings/stb/blob/master/docs/stb_howto.txt) header-only library. That means that just including it does not include the implementations of the functions. You have to define `NOBUILD_IMPLEMENTATION` macro before the include. See our [nobuild.c](./nobuild.c) for an example.
