@@ -19,7 +19,29 @@ Explore [nobuild.c](./nobuild.c) file and the [examples](./examples) folder to l
 
 I'm not sure if this is even a good idea myself. This is why I'm implementing it. This is a research project. I'm not making any claims about suitability of this approach to any project.
 
-Right now I'm actively using nobuild only in [bm](https://github.com/tsoding/bm).
+Right now I'm actively using nobuild only in [bm](https://github.com/tsoding/bm). It works quite well for me there.
+
+## It's likely Not Suitable for Your Project
+
+If you are use [cmake](https://cmake.org/) with tons of modules to manage and find tons of dependencies you probably don't want to use this tool. nobuild is more like writting shell scripts but in C.
+
+## Advantages of nobuild
+
+- Extremely portable builds across variety of systems including (but not limited to) Linux, MacOS, Windows, FreeBSD, etc. This is achieved by reducing the amount of dependencies to just a C compiler, which exists pretty much for any platform these days.
+- You end up using the same language for developing and building your project. Which may enable some interesting code reusage strategies.
+- You get to use C more.
+- ...
+
+## Disadvantages of nobuild
+
+- You need to be comfortable with C and implementing things yourself. As mentioned above this is like writing shell scripts but in C.
+- It probably does not make any sense outside of C/C++ projects.
+- You get to use C more.
+- ...
+
+## Why is it called "nobuild" when it's clearly a build tool?
+
+Marketing BS.
 
 ## How to use the library in your own project
 
