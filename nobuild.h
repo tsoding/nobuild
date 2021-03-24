@@ -538,13 +538,13 @@ Fd fd_open_for_write(Cstr path)
     saAttr.bInheritHandle = TRUE;
 
     Fd result = CreateFile(
-                    path,                // name of the write
-                    GENERIC_WRITE,          // open for writing
-                    0,                      // do not share
-                    &saAttr,                   // default security
-                    CREATE_NEW,             // create new file only
-                    FILE_ATTRIBUTE_NORMAL,  // normal file
-                    NULL                  // no attr. template
+                    path,                  // name of the write
+                    GENERIC_WRITE,         // open for writing
+                    0,                     // do not share
+                    &saAttr,               // default security
+                    CREATE_NEW,            // create new file only
+                    FILE_ATTRIBUTE_NORMAL, // normal file
+                    NULL                   // no attr. template
                 );
 
     if (result == INVALID_HANDLE_VALUE) {
@@ -568,8 +568,8 @@ void pid_wait(Pid pid)
 {
 #ifdef _WIN32
     DWORD result = WaitForSingleObject(
-                       pid, // HANDLE hHandle,
-                       INFINITE// DWORD  dwMilliseconds
+                       pid,     // HANDLE hHandle,
+                       INFINITE // DWORD  dwMilliseconds
                    );
 
     if (result == WAIT_FAILED) {
