@@ -576,6 +576,15 @@ void pid_wait(Pid pid)
         PANIC("could not wait on child process: %s", GetLastErrorAsString());
     }
 
+    DWORD exit_status;
+    if (GetExitCodeProcess(pid, &exit_status) == 0) {
+        PANIC("could not get process exit code: %lu", GetLastError());
+    }
+
+    if (exit_status != 0) {
+        PANIC("command exited with exit code %lu", exit_status);
+    }
+
     CloseHandle(pid);
 #else
     for (;;) {
