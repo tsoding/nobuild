@@ -931,7 +931,7 @@ void path_rm(Cstr path)
 
         if (rmdir(path) < 0) {
             if (errno == ENOENT) {
-                WARN("directory %s does not exist");
+                WARN("directory %s does not exist", path);
             } else {
                 PANIC("could not remove directory %s: %s", path, strerror(errno));
             }
@@ -939,7 +939,7 @@ void path_rm(Cstr path)
     } else {
         if (unlink(path) < 0) {
             if (errno == ENOENT) {
-                WARN("file %s does not exist");
+                WARN("file %s does not exist", path);
             } else {
                 PANIC("could not remove file %s: %s", path, strerror(errno));
             }
