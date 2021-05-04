@@ -597,7 +597,7 @@ void pid_wait(Pid pid)
     for (;;) {
         int wstatus = 0;
         if (waitpid(pid, &wstatus, 0) < 0) {
-            PANIC("could not wait on command: %s", pid, strerror(errno));
+            PANIC("could not wait on command (pid %d): %s", pid, strerror(errno));
         }
 
         if (WIFEXITED(wstatus)) {
