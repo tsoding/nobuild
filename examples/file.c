@@ -24,6 +24,10 @@ int main(void)
     DEMO(IS_DIR("./examples"));
     DEMO(IS_DIR("./file_that_does_not_exist"));
 
+    DEMO(PATH_EXISTS("./nobuild.c"));
+    DEMO(PATH_EXISTS("./examples"));
+    DEMO(PATH_EXISTS("./file_that_does_not_exist"));
+
     INFO("Recursively traversing the file system");
     print_file_recursively(".");
 

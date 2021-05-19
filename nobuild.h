@@ -203,6 +203,9 @@ void chain_echo(Chain chain);
 int path_is_dir(Cstr path);
 #define IS_DIR(path) path_is_dir(path)
 
+int path_exists(Cstr path);
+#define PATH_EXISTS(path) path_exists(path)
+
 void path_mkdirs(Cstr_Array path);
 #define MKDIRS(...)                                             \
     do {                                                        \
@@ -862,6 +865,26 @@ void chain_echo(Chain chain)
     }
 
     printf("\n");
+}
+
+int path_exists(Cstr path)
+{
+#ifdef _WIN32
+    DWORD dwAttrib = GetFileAttributes(path);
+    return (dwAttrib != INVALID_FILE_ATTRIBUTES);
+#else
+    struct stat statbuf = {0};
+    if (stat(path, &statbuf) < 0) {
+        if (errno == ENOENT) {
+            return 0;
+        }
+
+        PANIC("could not retrieve information about file %s: %s",
+              path, strerror(errno));
+    }
+
+    return 1;
+#endif
 }
 
 int path_is_dir(Cstr path)
