@@ -72,7 +72,7 @@ int closedir(DIR *dirp);
 #endif  // MINIRENT_H_
 // minirent.h HEADER END ////////////////////////////////////////
 
-// TODO: use GetLastErrorAsString everywhere on Windows error reporting
+// TODO(#28): use GetLastErrorAsString everywhere on Windows error reporting
 LPSTR GetLastErrorAsString(void);
 
 #endif  // _WIN32
@@ -209,6 +209,7 @@ void chain_echo(Chain chain);
 #  endif
 #endif
 
+// TODO: we need to test GO_REBUILD_URSELF on a real Windows machine
 #define GO_REBUILD_URSELF(argc, argv)                           \
     do {                                                        \
         const char *source_path = __FILE__;                     \
