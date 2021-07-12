@@ -72,7 +72,7 @@ int closedir(DIR *dirp);
 #endif  // MINIRENT_H_
 // minirent.h HEADER END ////////////////////////////////////////
 
-// TODO: use GetLastErrorAsString everywhere on Windows error reporting
+// TODO(#28): use GetLastErrorAsString everywhere on Windows error reporting
 LPSTR GetLastErrorAsString(void);
 
 #endif  // _WIN32
@@ -200,6 +200,32 @@ void chain_echo(Chain chain);
         chain_run_sync(chain);                                          \
     } while(0)
 
+// TODO(#29): REBUILD_URSELF does not distinguish MSVC and MinGW setups on Windows
+#ifndef REBUILD_URSELF
+#  if _WIN32
+#    define REBUILD_URSELF(binary_path, source_path) CMD("cl.exe", source_path)
+#  else
+#    define REBUILD_URSELF(binary_path, source_path) CMD("cc", "-o", binary_path, source_path)
+#  endif
+#endif
+
+// TODO(#30): we need to test GO_REBUILD_URSELF on a real Windows machine
+#define GO_REBUILD_URSELF(argc, argv)                           \
+    do {                                                        \
+        const char *source_path = __FILE__;                     \
+        assert(argc >= 1);                                      \
+        const char *binary_path = argv[0];                      \
+                                                                \
+        if (is_path1_modified_after_path2(source_path, binary_path)) {  \
+            RENAME(binary_path, CONCAT(binary_path, ".old"));   \
+            REBUILD_URSELF(binary_path, source_path);           \
+            CMD(binary_path);                                   \
+            exit(0);                                            \
+        }                                                       \
+    } while(0)
+
+void rebuild_urself(const char *binary_path, const char *source_path);
+
 int path_is_dir(Cstr path);
 #define IS_DIR(path) path_is_dir(path)
 
@@ -212,6 +238,13 @@ void path_mkdirs(Cstr_Array path);
         Cstr_Array path = cstr_array_make(__VA_ARGS__, NULL);   \
         INFO("MKDIRS: %s", cstr_array_join(PATH_SEP, path));    \
         path_mkdirs(path);                                      \
+    } while (0)
+
+void path_rename(Cstr old_path, Cstr new_path);
+#define RENAME(old_path, new_path)                    \
+    do {                                              \
+        INFO("RENAME: %s -> %s", old_path, new_path); \
+        path_rename(old_path, new_path);              \
     } while (0)
 
 void path_rm(Cstr path);
@@ -622,7 +655,7 @@ void pid_wait(Pid pid)
 
 Cstr cmd_show(Cmd cmd)
 {
-    // TODO: cmd_show does not render the command line properly
+    // TODO(#31): cmd_show does not render the command line properly
     // - No string literals when arguments contains space
     // - No escaping of special characters
     // - Etc.
@@ -640,7 +673,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     // NOTE: theoretically setting NULL to std handles should not be a problem
     // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
     siStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-    // TODO: check for errors in GetStdHandle
+    // TODO(#32): check for errors in GetStdHandle
     siStartInfo.hStdOutput = fdout ? *fdout : GetStdHandle(STD_OUTPUT_HANDLE);
     siStartInfo.hStdInput = fdin ? *fdin : GetStdHandle(STD_INPUT_HANDLE);
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
@@ -651,7 +684,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     BOOL bSuccess =
         CreateProcess(
             NULL,
-            // TODO: cmd_run_async on Windows does not render command line properly
+            // TODO(#33): cmd_run_async on Windows does not render command line properly
             // It may require wrapping some arguments with double-quotes if they contains spaces, etc.
             cstr_array_join(" ", cmd.line),
             NULL,
@@ -909,6 +942,21 @@ int path_is_dir(Cstr path)
 #endif // _WIN32
 }
 
+void path_rename(const char *old_path, const char *new_path)
+{
+#ifdef _WIN32
+    if (!MoveFileEx(old_path, new_path, MOVEFILE_REPLACE_EXISTING)) {
+        PANIC("could not rename %s to %s: %s", old_path, new_path,
+              GetLastErrorAsString());
+    }
+#else
+    if (rename(old_path, new_path) < 0) {
+        PANIC("could not rename %s to %s: %s", old_path, new_path,
+              strerror(errno));
+    }
+#endif // _WIN32
+}
+
 void path_mkdirs(Cstr_Array path)
 {
     if (path.count == 0) {
@@ -975,6 +1023,41 @@ void path_rm(Cstr path)
             }
         }
     }
+}
+
+int is_path1_modified_after_path2(const char *path1, const char *path2)
+{
+#ifdef _WIN32
+    FILETIME path1_time, path2_time;
+
+    Fd path1_fd = fd_open_for_read(path1);
+    if (!GetFileTime(path1_fd, NULL, NULL, &path1_time)) {
+        PANIC("could not get time of %s: %s", path1, GetLastErrorAsString());
+    }
+    fd_close(path1_fd);
+
+    Fd path2_fd = fd_open_for_read(path2);
+    if (!GetFileTime(path2_fd, NULL, NULL, &path2_time)) {
+        PANIC("could not get time of %s: %s", path2, GetLastErrorAsString());
+    }
+    fd_close(path2_fd);
+
+    return CompareFileTime(&path1, &path2) == -1;
+#else
+    struct stat statbuf = {0};
+
+    if (stat(path1, &statbuf) < 0) {
+        PANIC("could not stat %s: %s\n", path1, strerror(errno));
+    }
+    int path1_time = statbuf.st_mtime;
+
+    if (stat(path2, &statbuf) < 0) {
+        PANIC("could not stat %s: %s\n", path2, strerror(errno));
+    }
+    int path2_time = statbuf.st_mtime;
+
+    return path1_time > path2_time;
+#endif
 }
 
 void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args)
