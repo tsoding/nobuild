@@ -684,7 +684,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     BOOL bSuccess =
         CreateProcess(
             NULL,
-            // TODO: cmd_run_async on Windows does not render command line properly
+            // TODO(#33): cmd_run_async on Windows does not render command line properly
             // It may require wrapping some arguments with double-quotes if they contains spaces, etc.
             cstr_array_join(" ", cmd.line),
             NULL,
