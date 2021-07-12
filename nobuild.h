@@ -1041,7 +1041,7 @@ int is_path1_modified_after_path2(const char *path1, const char *path2)
     }
     fd_close(path2_fd);
 
-    return CompareFileTime(&path1, &path2) == 1;
+    return CompareFileTime(&path1, &path2) == -1;
 #else
     struct stat statbuf = {0};
 
