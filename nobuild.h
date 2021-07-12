@@ -673,7 +673,7 @@ Pid cmd_run_async(Cmd cmd, Fd *fdin, Fd *fdout)
     // NOTE: theoretically setting NULL to std handles should not be a problem
     // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
     siStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-    // TODO: check for errors in GetStdHandle
+    // TODO(#32): check for errors in GetStdHandle
     siStartInfo.hStdOutput = fdout ? *fdout : GetStdHandle(STD_OUTPUT_HANDLE);
     siStartInfo.hStdInput = fdin ? *fdin : GetStdHandle(STD_INPUT_HANDLE);
     siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
