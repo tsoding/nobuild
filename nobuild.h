@@ -209,7 +209,7 @@ void chain_echo(Chain chain);
 #  endif
 #endif
 
-// TODO: we need to test GO_REBUILD_URSELF on a real Windows machine
+// TODO(#30): we need to test GO_REBUILD_URSELF on a real Windows machine
 #define GO_REBUILD_URSELF(argc, argv)                           \
     do {                                                        \
         const char *source_path = __FILE__;                     \
