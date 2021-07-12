@@ -1,2 +1,3 @@
 nobuild
+*.old
 output.txt

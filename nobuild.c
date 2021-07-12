@@ -52,8 +52,10 @@ void print_chain(const Chain *chain)
     });
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+    GO_REBUILD_URSELF(argc, argv);
+
     build_tools();
     run_examples();
 
