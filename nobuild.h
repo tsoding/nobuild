@@ -655,7 +655,7 @@ void pid_wait(Pid pid)
 
 Cstr cmd_show(Cmd cmd)
 {
-    // TODO: cmd_show does not render the command line properly
+    // TODO(#31): cmd_show does not render the command line properly
     // - No string literals when arguments contains space
     // - No escaping of special characters
     // - Etc.
