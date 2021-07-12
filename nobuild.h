@@ -200,7 +200,7 @@ void chain_echo(Chain chain);
         chain_run_sync(chain);                                          \
     } while(0)
 
-// TODO: REBUILD_URSELF does not distinguish MSVC and MinGW setups on Windows
+// TODO(#29): REBUILD_URSELF does not distinguish MSVC and MinGW setups on Windows
 #ifndef REBUILD_URSELF
 #  if _WIN32
 #    define REBUILD_URSELF(binary_path, source_path) CMD("cl.exe", source_path)
