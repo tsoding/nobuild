@@ -209,6 +209,7 @@ void chain_echo(Chain chain);
 #  endif
 #endif
 
+// NOTE: The implementation idea is stolen from https://github.com/zhiayang/nabs
 #define GO_REBUILD_URSELF(argc, argv)                           \
     do {                                                        \
         const char *source_path = __FILE__;                     \
