@@ -210,18 +210,24 @@ void chain_echo(Chain chain);
 #endif
 
 // NOTE: The implementation idea is stolen from https://github.com/zhiayang/nabs
-#define GO_REBUILD_URSELF(argc, argv)                           \
-    do {                                                        \
-        const char *source_path = __FILE__;                     \
-        assert(argc >= 1);                                      \
-        const char *binary_path = argv[0];                      \
-                                                                \
-        if (is_path1_modified_after_path2(source_path, binary_path)) {  \
-            RENAME(binary_path, CONCAT(binary_path, ".old"));   \
-            REBUILD_URSELF(binary_path, source_path);           \
-            CMD(binary_path);                                   \
-            exit(0);                                            \
-        }                                                       \
+#define GO_REBUILD_URSELF(argc, argv)                                  \
+    do {                                                               \
+        const char *source_path = __FILE__;                            \
+        assert(argc >= 1);                                             \
+        const char *binary_path = argv[0];                             \
+                                                                       \
+        if (is_path1_modified_after_path2(source_path, binary_path)) { \
+            RENAME(binary_path, CONCAT(binary_path, ".old"));          \
+            REBUILD_URSELF(binary_path, source_path);                  \
+            Cmd cmd = {                                                \
+                .line = {                                              \
+                    .elems = (Cstr*) argv,                             \
+                    .count = argc,                                     \
+                },                                                     \
+            };                                                         \
+            cmd_run_sync(cmd);                                         \
+            exit(0);                                                   \
+        }                                                              \
     } while(0)
 
 void rebuild_urself(const char *binary_path, const char *source_path);
