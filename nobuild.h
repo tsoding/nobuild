@@ -225,6 +225,7 @@ void chain_echo(Chain chain);
                     .count = argc,                                     \
                 },                                                     \
             };                                                         \
+            INFO("CMD: %s", cmd_show(cmd));                            \
             cmd_run_sync(cmd);                                         \
             exit(0);                                                   \
         }                                                              \
