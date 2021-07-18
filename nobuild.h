@@ -203,7 +203,13 @@ void chain_echo(Chain chain);
 // TODO(#29): REBUILD_URSELF does not distinguish MSVC and MinGW setups on Windows
 #ifndef REBUILD_URSELF
 #  if _WIN32
-#    define REBUILD_URSELF(binary_path, source_path) CMD("cl.exe", source_path)
+#    if defined(__GNUC__)
+#       define REBUILD_URSELF(binary_path, source_path) CMD("gcc", "-o", binary_path, source_path)
+#    elif defined(__clang__)
+#       define REBUILD_URSELF(binary_path, source_path) CMD("clang", "-o", binary_path, source_path)
+#    elif defined(_MSC_VER)
+#       define REBUILD_URSELF(binary_path, source_path) CMD("cl.exe", source_path)
+#    endif
 #  else
 #    define REBUILD_URSELF(binary_path, source_path) CMD("cc", "-o", binary_path, source_path)
 #  endif
