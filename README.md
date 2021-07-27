@@ -54,4 +54,4 @@ Keep in mind that [nobuild.h](./nobuild.h) is an [stb-style](https://github.com/
    - `$ cl.exe nobuild.c` on Windows with MSVC
 4. Run the build: `$ ./nobuild`
 
-If you enable the [Go Rebuild Urself™ Technology](https://github.com/tsoding/nobuild/blob/d2bd711f0e2bcff0651850cd795509ab104ad9d4/nobuild.h#L218-L239) the `nobuild` executable will try to rebootstrap itself every time you modify its source code.
+If you enable the [Go Rebuild Urself™](https://github.com/tsoding/nobuild/blob/d2bd711f0e2bcff0651850cd795509ab104ad9d4/nobuild.h#L218-L239) Technology the `nobuild` executable will try to rebootstrap itself every time you modify its source code.
