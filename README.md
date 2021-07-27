@@ -45,7 +45,7 @@ You know all these BS movements that supposedly remove the root cause of your pr
 
 ## How to use the library in your own project
 
-Keep in mind that [nobuild.h](./nobuild.h) is an [stb-style](https://github.com/nothings/stb/blob/master/docs/stb_howto.txt) header-only library. That means that just including it does not include the implementations of the functions. You have to define `NOBUILD_IMPLEMENTATION` macro before the include. See our [nobuild.c](./nobuild.c) for an example.
+Keep in mind that [nobuild.h](./nobuild.h) is an [stb-style](https://github.com/nothings/stb/blob/master/docs/stb_howto.txt) header-only library. That means that just including it does not include the implementations of the functions. You have to `#define NOBUILD_IMPLEMENTATION` before the include. See our [nobuild.c](./nobuild.c) for an example.
 
 1. Copy [nobuild.h](./nobuild.h) to your project
 2. Create `nobuild.c` in your project with the build recipe. See our [nobuild.c](./nobuild.c) for an example.
