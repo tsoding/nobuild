@@ -215,7 +215,28 @@ void chain_echo(Chain chain);
 #  endif
 #endif
 
-// NOTE: The implementation idea is stolen from https://github.com/zhiayang/nabs
+// Go Rebuild Urself™ Technology
+//
+//   How to use it:
+//     int main(int argc, char** argv) {
+//         GO_REBUILD_URSELF(argc, argv);
+//         // actual work
+//         return 0;
+//     }
+//
+//   After your added this macro every time you run ./nobuild it will detect
+//   that you modified its original source code and will try to rebuild itself
+//   before doing any actual work. So you only need to bootstrap your build system
+//   once.
+//
+//   The modification is detected by comparing the last modified times of the executable
+//   and its source code. The same way the make utility usually does it.
+//
+//   The rebuilding is done by using the REBUILD_URSELF macro which you can redefine
+//   if you need a special way of bootstraping your build system. (which I personally
+//   do not recommend since the whole idea of nobuild is to keep the process of bootstrapping
+//   as simple as possible and doing all of the actual work inside of the nobuild)
+//
 #define GO_REBUILD_URSELF(argc, argv)                                  \
     do {                                                               \
         const char *source_path = __FILE__;                            \
@@ -236,6 +257,7 @@ void chain_echo(Chain chain);
             exit(0);                                                   \
         }                                                              \
     } while(0)
+// The implementation idea is stolen from https://github.com/zhiayang/nabs
 
 void rebuild_urself(const char *binary_path, const char *source_path);
 
