@@ -200,7 +200,6 @@ void chain_echo(Chain chain);
         chain_run_sync(chain);                                          \
     } while(0)
 
-// TODO(#29): REBUILD_URSELF does not distinguish MSVC and MinGW setups on Windows
 #ifndef REBUILD_URSELF
 #  if _WIN32
 #    if defined(__GNUC__)
