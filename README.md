@@ -28,7 +28,7 @@ If you are using [cmake](https://cmake.org/) with tons of modules to manage and 
 ## Advantages of nobuild
 
 - Extremely portable builds across variety of systems including (but not limited to) Linux, MacOS, Windows, FreeBSD, etc. This is achieved by reducing the amount of dependencies to just a C compiler, which exists pretty much for any platform these days.
-- You end up using the same language for developing and building your project. Which may enable some interesting code reusage strategies.
+- You end up using the same language for developing and building your project. Which may enable some interesting code reusage strategies. The build system can use the code of the project itself directly and the project can use the code of the build system also directly.
 - You get to use C more.
 - ...
 
