@@ -41,7 +41,7 @@ If you are using [cmake](https://cmake.org/) with tons of modules to manage and 
 
 ## Why is it called "nobuild" when it's clearly a build tool?
 
-Marketing BS.
+You know all these BS movements that supposedly remove the root cause of your problems? Things like [NoSQL](https://en.wikipedia.org/wiki/NoSQL), [No-code](https://en.wikipedia.org/wiki/No-code_development_platform), [Serverless](https://en.wikipedia.org/wiki/Serverless_computing), etc. This is the same logic. I had too many problems with the process of building C projects. So there is nobuild anymore.
 
 ## How to use the library in your own project
 
