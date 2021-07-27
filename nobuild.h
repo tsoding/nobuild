@@ -1084,7 +1084,7 @@ void INFO(Cstr fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    VLOG(stdout, "INFO", fmt, args);
+    VLOG(stderr, "INFO", fmt, args);
     va_end(args);
 }
 
