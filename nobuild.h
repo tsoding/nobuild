@@ -943,6 +943,7 @@ int path_exists(Cstr path)
     struct stat statbuf = {0};
     if (stat(path, &statbuf) < 0) {
         if (errno == ENOENT) {
+            errno = 0;
             return 0;
         }
 
