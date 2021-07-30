@@ -966,6 +966,7 @@ int path_is_dir(Cstr path)
     struct stat statbuf = {0};
     if (stat(path, &statbuf) < 0) {
         if (errno == ENOENT) {
+            errno = 0;
             return 0;
         }
 
@@ -1024,6 +1025,7 @@ void path_mkdirs(Cstr_Array path)
 
         if (mkdir(result, 0755) < 0) {
             if (errno == EEXIST) {
+                errno = 0;
                 WARN("directory %s already exists", result);
             } else {
                 PANIC("could not create directory %s: %s", result, strerror(errno));
@@ -1044,6 +1046,7 @@ void path_rm(Cstr path)
 
         if (rmdir(path) < 0) {
             if (errno == ENOENT) {
+                errno = 0;
                 WARN("directory %s does not exist", path);
             } else {
                 PANIC("could not remove directory %s: %s", path, strerror(errno));
@@ -1052,6 +1055,7 @@ void path_rm(Cstr path)
     } else {
         if (unlink(path) < 0) {
             if (errno == ENOENT) {
+                errno = 0;
                 WARN("file %s does not exist", path);
             } else {
                 PANIC("could not remove file %s: %s", path, strerror(errno));
