@@ -59,6 +59,7 @@ typedef HANDLE Fd;
 #define WIN32_LEAN_AND_MEAN
 #include "windows.h"
 
+
 struct dirent {
     char d_name[MAX_PATH+1];
 };
@@ -305,6 +306,38 @@ void path_rm(Cstr path);
         if (errno > 0) {                                \
             PANIC("could not read directory %s: %s",    \
                   dirpath, strerror(errno));            \
+        }                                               \
+                                                        \
+        closedir(dir);                                  \
+    } while(0)
+
+int copy_file(Cstr from, Cstr to);
+#define COPY(from, to) copy_file(from, to)
+
+#define COPY_EACH_FILE_IN_DIR(frompath, topath)         \
+    do {                                                \
+        struct dirent *dp = NULL;                       \
+        DIR *dir = opendir(frompath);                   \
+        if (dir == NULL) {                              \
+            PANIC("could not open directory %s: %s",    \
+                  frompath, strerror(errno));           \
+        }                                               \
+        errno = 0;                                      \
+        while ((dp = readdir(dir))) {                   \
+            const char *file = dp->d_name;              \
+            if (strcmp(file, ".") != 0                  \
+            && strcmp(file, "..") != 0)                 \
+            {                                           \
+                copy_file(                              \
+                    PATH(frompath, file),               \
+                    PATH(topath, file));                \
+            }                                           \
+                                                        \
+        }                                               \
+                                                        \
+        if (errno > 0) {                                \
+            PANIC("could not read directory %s: %s",    \
+                  frompath, strerror(errno));           \
         }                                               \
                                                         \
         closedir(dir);                                  \
@@ -955,6 +988,7 @@ int path_exists(Cstr path)
 #endif
 }
 
+
 int path_is_dir(Cstr path)
 {
 #ifdef _WIN32
@@ -1063,6 +1097,79 @@ void path_rm(Cstr path)
         }
     }
 }
+
+int copy_file(Cstr from, Cstr to)
+{
+    INFO("COPY: %s -> %s", from, to);
+#ifdef _WIN32
+    return CopyFileW(from, to, false);
+#else
+    int fd_to, fd_from;
+    char buf[4096];
+    ssize_t nread;
+    int saved_errno;
+
+    fd_from = open(from, O_RDONLY);
+    if (fd_from < 0)
+        return -1;
+
+    fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+    if (fd_to < 0) {
+        WARN("file %s already exists. Overwriting", to);
+        path_rm(to);
+
+        //retry opening
+        errno = 0;
+        fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
+        if (fd_to < 0) {
+            goto out_error;
+        }
+    }
+
+    while (nread = read(fd_from, buf, sizeof buf), nread > 0)
+    {
+        char *out_ptr = buf;
+        ssize_t nwritten;
+
+        do {
+            nwritten = write(fd_to, out_ptr, nread);
+
+            if (nwritten >= 0)
+            {
+                nread -= nwritten;
+                out_ptr += nwritten;
+            }
+            else if (errno != EINTR)
+            {
+                goto out_error;
+            }
+        } while (nread > 0);
+    }
+
+    if (nread == 0)
+    {
+        if (close(fd_to) < 0)
+        {
+            fd_to = -1;
+            goto out_error;
+        }
+        close(fd_from);
+
+        return 0; // Success
+    }
+
+  out_error:
+    saved_errno = errno;
+
+    close(fd_from);
+    if (fd_to >= 0)
+        close(fd_to);
+
+    errno = saved_errno;
+    return -1;
+#endif
+}
+
 
 int is_path1_modified_after_path2(const char *path1, const char *path2)
 {
