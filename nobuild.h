@@ -945,14 +945,14 @@ Cstr path_get_current_dir()
         PANIC("could not get current directory: %s", GetLastErrorAsString());
     }
 
-    Cstr buffer = (Cstr) malloc(nBufferLength);
+    char *buffer = (char*) malloc(nBufferLength);
     if (GetCurrentDirectory(nBufferLength, buffer) == 0) {
         PANIC("could not get current directory: %s", GetLastErrorAsString());
     }
 
     return buffer;
 #else
-    Cstr buffer = (Cstr) malloc(PATH_MAX);
+    char *buffer = (char*) malloc(PATH_MAX);
     if (getcwd(buffer, PATH_MAX) == NULL) {
         PANIC("could not get current directory: %s", strerror(errno));
     }
