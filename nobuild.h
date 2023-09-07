@@ -9,6 +9,7 @@
 #    include <unistd.h>
 #    include <dirent.h>
 #    include <fcntl.h>
+#    include <limits.h>
 #    define PATH_SEP "/"
 typedef pid_t Pid;
 typedef int Fd;
@@ -113,6 +114,8 @@ Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs);
 #define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__, NULL))
 #define CONCAT(...) JOIN("", __VA_ARGS__)
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
+#define GETCWD() path_get_current_dir()
+#define SETCWD(path) path_set_current_dir(path)
 
 typedef struct {
     Fd read;
@@ -932,6 +935,45 @@ void chain_echo(Chain chain)
     }
 
     printf("\n");
+}
+
+Cstr path_get_current_dir()
+{
+#ifdef _WIN32
+    DWORD nBufferLength = GetCurrentDirectory(0, NULL);
+    if (nBufferLength == 0) {
+        PANIC("could not get current directory: %s", GetLastErrorAsString());
+    }
+
+    char *buffer = (char*) malloc(nBufferLength);
+    if (GetCurrentDirectory(nBufferLength, buffer) == 0) {
+        PANIC("could not get current directory: %s", GetLastErrorAsString());
+    }
+
+    return buffer;
+#else
+    char *buffer = (char*) malloc(PATH_MAX);
+    if (getcwd(buffer, PATH_MAX) == NULL) {
+        PANIC("could not get current directory: %s", strerror(errno));
+    }
+
+    return buffer;
+#endif // _WIN32
+}
+
+void path_set_current_dir(Cstr path)
+{
+#ifdef _WIN32
+    if (!SetCurrentDirectory(path)) {
+        PANIC("could not set current directory to %s: %s",
+              path, GetLastErrorAsString());
+    }
+#else
+    if (chdir(path) < 0) {
+        PANIC("could not set current directory to %s: %s",
+              path, strerror(errno));
+    }
+#endif // _WIN32
 }
 
 int path_exists(Cstr path)
