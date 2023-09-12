@@ -5,7 +5,7 @@ jobs:
   build-linux-gcc:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: build
         run: |
           $CC nobuild.c -o nobuild
@@ -16,7 +16,7 @@ jobs:
   build-linux-clang:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: build
         run: |
           $CC nobuild.c -o nobuild
@@ -27,7 +27,7 @@ jobs:
   build-macos:
     runs-on: macOS-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: build
         run: |
           $CC nobuild.c -o nobuild
@@ -38,7 +38,7 @@ jobs:
   build-windows-msvc:
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
         # this runs vcvarsall for us, so we get the MSVC toolchain in PATH.
       - uses: seanmiddleditch/gha-setup-vsdevenv@master
       - name: build
