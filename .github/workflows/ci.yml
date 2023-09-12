@@ -39,11 +39,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-        # this runs vcvarsall for us, so we get the MSVC toolchain in PATH.
-      - uses: seanmiddleditch/gha-setup-vsdevenv@master
+      - uses: TheMrMilchmann/setup-msvc-dev@v2 # prepare Visual Studio C++ toolchain
+        with:
+          arch: x64
       - name: build
-        shell: cmd
-        # this replaces default PowerShell, which can't fail the build
+        shell: cmd # this replaces default PowerShell, which can't fail the build
         run: |
           cl.exe nobuild.c
           .\nobuild.exe test
