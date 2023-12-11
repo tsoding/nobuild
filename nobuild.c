@@ -40,7 +40,7 @@ void run_example_cxx(const char *example)
 #ifndef _WIN32
     CMD("c++", CXXFLAGS, "-o", NOEXT(example_path), example_path);
 #else
-    CMD("cl.exe", "/Fe.\\examples\\", example_path);
+    CMD("cl.exe", "/std:c++20", "/Fe.\\examples\\", example_path);
 #endif
     CMD(NOEXT(example_path));
 }
