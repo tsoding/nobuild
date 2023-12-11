@@ -203,17 +203,29 @@ void chain_echo(Chain chain);
         chain_run_sync(chain);                                          \
     } while(0)
 
+#ifdef __cplusplus
+#define NOBUILD_GCC "g++"
+#define NOBUILD_CLANG "clang++"
+#define NOBUILD_MSC "cl.exe"
+#define NOBUILD_CC "c++"
+#else
+#define NOBUILD_GCC "gcc"
+#define NOBUILD_CLANG "clang"
+#define NOBUILD_MSC "cl.exe"
+#define NOBUILD_CC "cc"
+#endif
+
 #ifndef REBUILD_URSELF
 #  if _WIN32
 #    if defined(__GNUC__)
-#       define REBUILD_URSELF(binary_path, source_path) CMD("gcc", "-o", binary_path, source_path)
+#       define REBUILD_URSELF(binary_path, source_path) CMD(NOBUILD_GCC, "-o", binary_path, source_path)
 #    elif defined(__clang__)
-#       define REBUILD_URSELF(binary_path, source_path) CMD("clang", "-o", binary_path, source_path)
+#       define REBUILD_URSELF(binary_path, source_path) CMD(NOBUILD_CLANG, "-o", binary_path, source_path)
 #    elif defined(_MSC_VER)
-#       define REBUILD_URSELF(binary_path, source_path) CMD("cl.exe", source_path)
+#       define REBUILD_URSELF(binary_path, source_path) CMD(NOBUILD_MSC, source_path)
 #    endif
 #  else
-#    define REBUILD_URSELF(binary_path, source_path) CMD("cc", "-o", binary_path, source_path)
+#    define REBUILD_URSELF(binary_path, source_path) CMD(NOBUILD_CC, "-o", binary_path, source_path)
 #  endif
 #endif
 
@@ -251,7 +263,7 @@ void chain_echo(Chain chain);
             Cmd cmd = {                                                \
                 .line = {                                              \
                     .elems = (Cstr*) argv,                             \
-                    .count = argc,                                     \
+                    .count = (size_t)argc,                             \
                 },                                                     \
             };                                                         \
             INFO("CMD: %s", cmd_show(cmd));                            \
@@ -440,7 +452,7 @@ Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr)
     Cstr_Array result = {
         .count = cstrs.count + 1
     };
-    result.elems = malloc(sizeof(result.elems[0]) * result.count);
+    result.elems = (Cstr*)malloc(sizeof(result.elems[0]) * result.count);
     memcpy(result.elems, cstrs.elems, cstrs.count * sizeof(result.elems[0]));
     result.elems[cstrs.count] = cstr;
     return result;
@@ -462,7 +474,7 @@ Cstr cstr_no_ext(Cstr path)
     }
 
     if (n > 0) {
-        char *result = malloc(n);
+        char *result = (char *)malloc(n);
         memcpy(result, path, n);
         result[n - 1] = '\0';
 
@@ -491,7 +503,7 @@ Cstr_Array cstr_array_make(Cstr first, ...)
     }
     va_end(args);
 
-    result.elems = malloc(sizeof(result.elems[0]) * result.count);
+    result.elems = (Cstr*)malloc(sizeof(result.elems[0]) * result.count);
     if (result.elems == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
@@ -523,7 +535,7 @@ Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs)
     }
 
     const size_t result_len = (cstrs.count - 1) * sep_len + len + 1;
-    char *result = malloc(sizeof(char) * result_len);
+    char *result = (char *)malloc(sizeof(char) * result_len);
     if (result == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
@@ -836,7 +848,7 @@ Chain chain_build_from_tokens(Chain_Token first, ...)
     }
     va_end(args);
 
-    result.cmds.elems = malloc(sizeof(result.cmds.elems[0]) * result.cmds.count);
+    result.cmds.elems = (Cmd *)malloc(sizeof(result.cmds.elems[0]) * result.cmds.count);
     if (result.cmds.elems == NULL) {
         PANIC("could not allocate memory: %s", strerror(errno));
     }
@@ -861,7 +873,7 @@ void chain_run_sync(Chain chain)
         return;
     }
 
-    Pid *cpids = malloc(sizeof(Pid) * chain.cmds.count);
+    Pid *cpids = (Pid *)malloc(sizeof(Pid) * chain.cmds.count);
 
     Pipe pip = {0};
     Fd fdin = 0;
@@ -1049,7 +1061,7 @@ void path_mkdirs(Cstr_Array path)
     size_t seps_count = path.count - 1;
     const size_t sep_len = strlen(PATH_SEP);
 
-    char *result = malloc(len + seps_count * sep_len + 1);
+    char *result = (char *)malloc(len + seps_count * sep_len + 1);
 
     len = 0;
     for (size_t i = 0; i < path.count; ++i) {
