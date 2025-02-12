@@ -3,7 +3,7 @@
 Header only library for writing build recipes in C.
 
 > [!WARNING]
-> This library is DEPRECATED! Use [https://github.com/tsoding/nob.h] instead
+> This library is DEPRECATED! Use [https://github.com/tsoding/nob.h](https://github.com/tsoding/nob.h) instead
 
 ## How to use the library in your own project
 
