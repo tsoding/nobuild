@@ -2,6 +2,7 @@
 #include "./nobuild.h"
 
 #define CFLAGS "-Wall", "-Wextra", "-std=c99", "-pedantic"
+#define CXXFLAGS "-Wall", "-Wextra", "-std=c++11", "-pedantic"
 
 void build_tool(const char *tool)
 {
@@ -33,11 +34,25 @@ void run_example(const char *example)
     CMD(NOEXT(example_path));
 }
 
+void run_example_cxx(const char *example)
+{
+    Cstr example_path = PATH("examples", example);
+#ifndef _WIN32
+    CMD("c++", CXXFLAGS, "-o", NOEXT(example_path), example_path);
+#else
+    CMD("cl.exe", "/std:c++20", "/Fe.\\examples\\", example_path);
+#endif
+    CMD(NOEXT(example_path));
+}
+
 void run_examples(void)
 {
     FOREACH_FILE_IN_DIR(example, "examples", {
         if (ENDS_WITH(example, ".c")) {
             run_example(example);
+        }
+        if (ENDS_WITH(example, ".cpp")) {
+            run_example_cxx(example);
         }
     });
 }
