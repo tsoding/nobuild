@@ -3,3 +3,4 @@ foreach
 logging
 file
 pipe
+copy
